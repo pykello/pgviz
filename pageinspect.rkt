@@ -47,6 +47,9 @@
 
 (struct heap-tuple (itemid
                     header
+                    data-offset
+                    data-len
+                    data-bytes
                     attrs))
 
 ;; exported functions
@@ -69,6 +72,7 @@
 
 (define page-header-size 24)
 (define itemid-size 4)
+(define htup-header-size 23)
 
 (define (get-page-header pgc relname fork idx)
   (define bytes (take (bytes->list (get-raw-page pgc relname fork idx)) page-header-size))
@@ -102,9 +106,13 @@
     (define htup-offset (item-id-lp_off itemid))
     (define htup-len (item-id-lp_len itemid))
     (define htup-bytes (sublist page-bytes htup-offset htup-len))
-    (define header (apply htup-header (append (list htup-offset htup-len htup-bytes) (take (drop row 3) 8))))
+    (define htup-header-bytes (take page-bytes htup-header-size))
+    (define htup-data-bytes (drop page-bytes htup-header-size))
+    (define header (apply htup-header (append (list htup-offset htup-header-size htup-header-bytes) (take (drop row 3) 8))))
     (define attrs (pg-array->list (car (drop row 11))))
-    (heap-tuple itemid header attrs)))
+    (define data-offset (+ htup-offset htup-header-size))
+    (define data-len (- htup-len htup-header-size))
+    (heap-tuple itemid header data-offset data-len htup-data-bytes attrs)))
 
 ;; Finds maximum value v in [min, max] which (satisifies? v)
 ;; If not found, default is returned.

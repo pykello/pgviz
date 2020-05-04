@@ -1,6 +1,7 @@
 #lang racket
 
 (require db
+         racket/draw
          "gui.rkt"
          "memory-view.rkt"
          "pageinspect.rkt")
@@ -30,25 +31,34 @@
     (memory-cell addr value "Medium Goldenrod" (λ (c) (displayln "Header was clicked")))))
 
 (define (htups->memory-cells htups)
+  (define header-brush
+    (make-object brush% "NavajoWhite" 'bdiagonal-hatch))
   (flatten
-   (for/list ([tup htups])
+   (for/list ([tup htups]
+              [idx (in-range 1024)])
+     (define itemid-color (if (odd? idx) "LightSkyBlue" "Medium Turquoise"))
      (define itemid (heap-tuple-itemid tup))
      (define itemid-from (item-id-offset itemid))
      (define itemid-to (+ itemid-from (item-id-len itemid)))
      (define itemid-cells (bytes->cells (item-id-bytes itemid)
                                         itemid-from itemid-to
-                                        "DarkKhaki"
+                                        itemid-color
                                         (λ (c) (displayln "ItemId was clicked"))))
      (define header (heap-tuple-header tup))
-     (define tuple-from (htup-header-offset header))
-     (define tuple-to (+ tuple-from (htup-header-len header)))
-     (define tuple-cells (bytes->cells (htup-header-bytes header)
-                                       tuple-from tuple-to
-                                       "NavajoWhite"
-                                       (λ (c) (displayln "Tuple was clicked"))))
-     (append itemid-cells tuple-cells))))
+     (define header-cells (bytes->cells (htup-header-bytes header)
+                                       (htup-header-offset header)
+                                       (htup-header-len header)
+                                       header-brush
+                                       (λ (c) (displayln "Tuple header was clicked"))))
+     (define data-cells (bytes->cells (heap-tuple-data-bytes tup)
+                                      (heap-tuple-data-offset tup)
+                                      (heap-tuple-data-len tup)
+                                      "NavajoWhite"
+                                      (λ (c) (displayln "Tuple was clicked"))))
+     (append itemid-cells header-cells data-cells))))
 
-(define (bytes->cells bytes from to color callback) 
+(define (bytes->cells bytes from len color callback)
+  (define to (+ from len))
   (for/list ([value bytes]
              [addr (in-range from to)])
     (memory-cell addr value color callback)))
