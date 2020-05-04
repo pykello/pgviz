@@ -16,3 +16,7 @@
 
 (define (sublist lst idx len)
   (take (drop lst idx) len))
+
+(define (compose f g)
+  (λ (v)
+    (f (g v))))

@@ -48,7 +48,7 @@
                [cell (findf point-in-cell? (memory-layout-cell-positions layout))])
           (when (list? cell)
             (let ([callback (memory-cell-callback (third cell))])
-              (callback 0)))))
+              (callback)))))
 
     (define/override (paint dc)
       (set! layout (get-memory-layout))

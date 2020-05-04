@@ -6,7 +6,8 @@
          set-monitor-handler)
 
 (require racket/class
-         "gui-components/monitor.rkt")
+         "gui-components/monitor.rkt"
+         "utils.rkt")
 
 ;; public interface
 (define (show-gui)
@@ -15,8 +16,10 @@
 (define (set-debug v)
   (send debug-box set-value v))
 
-(define (set-attrs . v)
-  (send/apply list-box set v))
+(define (set-attrs attrs)
+  (define names (map (compose ~a first) attrs))
+  (define values (map (compose ~a second) attrs))
+  (send list-box set names values))
 
 (define (set-monitor-handler handler)
   (send canvas set-handler handler))
@@ -40,11 +43,6 @@
        [horiz-margin 5]
        [spacing 5]))
 
-;;(define canvas
-;;  (new memory-view%
-;;       [parent pane]
-;;       [cells (list (memory-cell 400 65 "SkyBlue" (λ(x) (0))))]))
-
 (define canvas
   (new monitor%
        [parent pane]))
@@ -66,6 +64,8 @@
        [columns `("Name" "Value")]
        [min-height 300]
        [style `(single column-headers clickable-headers)]))
+
+(send list-box set-column-width 0 100 50 200)
 
 (define debug-box
   (new text-field%

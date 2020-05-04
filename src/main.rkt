@@ -3,9 +3,6 @@
 (require db
          racket/draw
          "gui.rkt"
-         "gui-components/memory-view.rkt"
-         "gui-components/monitor.rkt"
-         "postgres/pageinspect.rkt"
          "postgres-gui/heap-viewer.rkt")
 
 (define (main)
@@ -14,7 +11,7 @@
                         #:database "postgres"))
   (show-gui)
   (set-debug "Sample debug message")
-  (set-attrs `("1" "2" "3" "4") `("v1" "v2" "v3" "v4x"))
-  (set-monitor-handler (heap-page-view pgc "pg_class" "main" 0)))
+  (set-attrs `(("name 1" "value 1") ("name 2" "value 2")))
+  (set-monitor-handler (heap-page-view pgc "pg_class" "main" 0 set-attrs)))
 
 (main)
