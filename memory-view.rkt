@@ -6,6 +6,7 @@
 (provide (all-defined-out))
 
 (struct memory-cell (address
+                     value
                      color
                      callback))
 
@@ -23,7 +24,7 @@
                 [cells `()]
                 [memory-size 4096]
                 [per-row 32])
-    (inherit get-dc get-width get-height)
+    (inherit get-dc get-width get-height refresh-now)
 
     ;;
     ;; constants
@@ -31,6 +32,14 @@
     (define cell-side 40)
     (define hmargin 160)
     (define vmargin 100)
+
+    ;;
+    ;; public methods
+    ;;
+    (define/public (set-cells new-cells)
+      (set! cells new-cells)
+      (set! layout (get-memory-layout))
+      (send this refresh-now))
 
     ;;
     ;; event handler
@@ -82,7 +91,12 @@
         (define y (second cell-pos))
         (define cell (third cell-pos))
         (send dc set-brush (memory-cell-color cell) 'solid)
-        (send dc draw-rectangle x y (+ 1 cell-side) (+ 1 cell-side))))
+        (send dc draw-rectangle x y (+ 1 cell-side) (+ 1 cell-side))
+        (define label (hex-format (memory-cell-value cell) 2 ""))
+        (define-values (w h s1 s2) (send dc get-text-extent label))
+        (define label-x (+ x (/ cell-side 2) (* -0.5 w)))
+        (define label-y (+ y (/ cell-side 2) (* -0.5 h)))
+        (send dc draw-text label label-x label-y)))
 
     (define (get-memory-layout)
       (define-values (visible-rows spacers)

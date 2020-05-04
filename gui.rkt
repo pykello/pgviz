@@ -2,7 +2,8 @@
 
 (provide show-gui
          set-debug
-         set-attrs)
+         set-attrs
+         set-memory-page-cells)
 
 (require racket/class
          "memory-view.rkt")
@@ -16,6 +17,9 @@
 
 (define (set-attrs . v)
   (send/apply list-box set v))
+
+(define (set-memory-page-cells cells)
+  (send canvas set-cells cells))
 
 ;; gui definition
 (define window
@@ -39,7 +43,7 @@
 (define canvas
   (new memory-view%
        [parent pane]
-       [cells (list (memory-cell 400 "SkyBlue" (λ(x) (0))))]))
+       [cells (list (memory-cell 400 65 "SkyBlue" (λ(x) (0))))]))
 
 (define list-box-container
   (new group-box-panel%
