@@ -6,8 +6,7 @@
          set-monitor-handler)
 
 (require racket/class
-         "memory-view.rkt"
-         "monitor.rkt")
+         "gui-components/monitor.rkt")
 
 ;; public interface
 (define (show-gui)

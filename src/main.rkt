@@ -3,9 +3,9 @@
 (require db
          racket/draw
          "gui.rkt"
-         "memory-view.rkt"
-         "pageinspect.rkt"
-         "monitor.rkt")
+         "gui-components/memory-view.rkt"
+         "gui-components/monitor.rkt"
+         "postgres/pageinspect.rkt")
 
 (define header-brush "Medium Goldenrod")
 (define itemid-brush1 "LightSkyBlue")

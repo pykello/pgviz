@@ -2,7 +2,7 @@
 
 (require db
          db/util/postgresql
-         "utils.rkt")
+         "../utils.rkt")
 
 (provide (all-defined-out))
 

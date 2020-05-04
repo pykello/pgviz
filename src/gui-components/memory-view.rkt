@@ -1,7 +1,7 @@
 #lang racket/gui
 
 (require racket/format
-         "utils.rkt"
+         "../utils.rkt"
          "monitor.rkt")
 
 (provide (all-defined-out))
@@ -33,6 +33,10 @@
     (define cell-side 40)
     (define hmargin 160)
     (define vmargin 100)
+
+    ;;
+    ;; variables
+    ;;
     (define layout #f)
 
     ;;
