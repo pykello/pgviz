@@ -32,10 +32,52 @@
        [height 800]
        [style `()]))
 
-(define search-box
-  (new text-field%
+(define postgres-pane
+  (new horizontal-pane%
        [parent window]
-       [label "Search: "]))
+       [horiz-margin 5]
+       [spacing 5]
+       [stretchable-height #f]
+))
+
+(define postgres-hostname
+  (new text-field%
+       [parent postgres-pane]
+       [label "hostname: "]
+       [init-value "localhost"]
+       [stretchable-width #f]
+       [min-width 200]))
+
+(define postgres-port
+  (new text-field%
+       [parent postgres-pane]
+       [label "port: "]
+       [init-value "5432"]
+       [stretchable-width #f]
+       [min-width 100]))
+
+(define postgres-user
+  (new text-field%
+       [parent postgres-pane]
+       [label "user: "]
+       [init-value "hadi"]
+       [stretchable-width #f]
+       [min-width 150]))
+
+(define postgres-database
+  (new text-field%
+       [parent postgres-pane]
+       [label "database: "]
+       [init-value "postgres"]
+       [stretchable-width #f]
+       [min-width 200]))
+
+(define postgres-connect
+  (new button%
+       [parent postgres-pane]
+       [label "connect"]
+       [stretchable-width #f]
+       [min-width 100]))
 
 (define pane
   (new horizontal-pane%
