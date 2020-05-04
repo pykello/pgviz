@@ -19,11 +19,24 @@
 
 (define (load-heap-page pgc rel fork idx)
   (define header-cells (page-header->memory-cells (get-page-header pgc rel fork idx)))
-  (set-memory-page-cells header-cells))
+  (define tuple-cells (htups->memory-cells (get-heap-tuples pgc rel fork idx)))
+  (set-memory-page-cells (append header-cells tuple-cells)))
 
 (define (page-header->memory-cells header)
   (for/list ([value (page-header-bytes header)]
              [addr (in-range (page-header-offset header) (page-header-len header))])
     (memory-cell addr value "Medium Goldenrod" (λ (c) (displayln "Header was clicked")))))
+
+(define (htups->memory-cells htups)
+  (flatten
+   (for/list ([tup htups])
+     (define itemid (heap-tuple-itemid tup))
+     (define itemid-from (item-id-offset itemid))
+     (define itemid-to (+ itemid-from (item-id-len itemid)))
+     (define itemid-cells 
+       (for/list ([value (item-id-bytes itemid)]
+                  [addr (in-range itemid-from itemid-to)])
+         (memory-cell addr value "DarkKhaki" (λ (c) (displayln "ItemId was clicked")))))
+     itemid-cells)))
 
 (main)

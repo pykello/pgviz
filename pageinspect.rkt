@@ -67,8 +67,11 @@
                "SELECT * FROM get_raw_page($1, $2, $3)"
                relname fork idx))
 
+(define page-header-size 24)
+(define itemid-size 4)
+
 (define (get-page-header pgc relname fork idx)
-  (define bytes (take (bytes->list (get-raw-page pgc relname fork idx)) 8))
+  (define bytes (take (bytes->list (get-raw-page pgc relname fork idx)) page-header-size))
   (define result
     (query-row pgc
                "SELECT lsn::text,
@@ -82,7 +85,7 @@
                        prune_xid::text
                 FROM page_header(get_raw_page($1, $2, $3))"
                relname fork idx))
-  (apply page-header (append (list 0 8 bytes) (vector->list result))))
+  (apply page-header (append (list 0 page-header-size bytes) (vector->list result))))
 
 (define (get-heap-tuples pgc relname fork idx)
   (define page-bytes (bytes->list (get-raw-page pgc relname fork idx)))
@@ -93,9 +96,9 @@
   (for/list ([row-v (query-rows pgc query relname fork idx)]
              [i (in-range 1024)])
     (define row (vector->list row-v))
-    (define itemid-offset (+ 8 (* 2 i)))
-    (define itemid-bytes (sublist page-bytes itemid-offset 2))
-    (define itemid (apply item-id (append (list itemid-offset 2 itemid-bytes) (take row 3))))
+    (define itemid-offset (+ page-header-size (* itemid-size i)))
+    (define itemid-bytes (sublist page-bytes itemid-offset itemid-size))
+    (define itemid (apply item-id (append (list itemid-offset itemid-size itemid-bytes) (take row 3))))
     (define htup-offset (item-id-lp_off itemid))
     (define htup-len (item-id-lp_len itemid))
     (define htup-bytes (sublist page-bytes htup-offset htup-len))
