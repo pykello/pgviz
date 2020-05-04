@@ -1,0 +1,139 @@
+#lang racket/gui
+
+(require racket/format)
+
+(provide (all-defined-out))
+
+(struct memory-cell (address
+                     color
+                     callback))
+
+(struct memory-layout (visible-rows ;; (list y row-offset)
+                       spacers ;; (list y)
+                       cell-positions ;; (list (x y memory-cell))
+                       ))
+
+(define memory-view%
+  (class canvas%
+    ;;
+    ;; fields
+    ;;
+    (init-field [callback (λ(x) (0))]
+                [cells `()]
+                [memory-size 4096]
+                [per-row 32])
+    (inherit get-dc get-width get-height)
+
+    ;;
+    ;; constants
+    ;;
+    (define cell-side 40)
+    (define hmargin 100)
+    (define vmargin 100)
+
+    ;;
+    ;; event handler
+    ;;
+    (define/override (on-event event)
+      0)
+
+    ;;
+    ;; how to paint this?
+    ;;
+    (define/override (on-paint)
+      (define dc (get-dc))
+
+      ;; draw grid
+      (draw-layout dc layout))
+
+    ;;
+    ;; private methods
+    ;;
+    (define (draw-layout dc layout)
+      (send dc set-brush "black" 'transparent)
+      (send dc set-font (make-object font% 12 'modern))
+      ;; draw rows
+      (for ([visible-row (memory-layout-visible-rows layout)])
+        (define y (first visible-row))
+        (for ([col (in-range per-row)])
+          (define x (+ hmargin (* col cell-side)))
+          (send dc draw-rectangle x y (+ 1 cell-side) (+ 1 cell-side)))
+        (define label "0x00000")
+        (define-values (w h s1 s2) (send dc get-text-extent label))
+        (define label-x (- hmargin w 10))
+        (define label-y (+ y (/ cell-side 2) (* h -0.5)))
+        (send dc draw-text label label-x label-y))
+      ;; draw spacers
+      (for ([y (memory-layout-spacers layout)])
+        (send dc draw-rectangle hmargin y (+ 1 (* cell-side per-row)) (+ 1 cell-side))
+        (for ([i (in-range -2 3)])
+          (define x (+ vmargin (* per-row cell-side 0.5) (* i cell-side)))
+          (send dc set-brush "black" 'solid)
+          (send dc draw-ellipse x (+ y (/ cell-side 2)) 4 4)
+          (send dc set-brush "black" 'transparent)))
+      ;; draw cells
+      (for ([cell-pos (memory-layout-cell-positions layout)])
+        (define x (first cell-pos))
+        (define y (second cell-pos))
+        (define cell (third cell-pos))
+        (send dc set-brush (memory-cell-color cell) 'solid)
+        (send dc draw-rectangle x y (+ 1 cell-side) (+ 1 cell-side))))
+
+    (define (get-memory-layout)
+      (define-values (visible-rows spacers)
+        (for/fold ([visible-rows-agg `()]
+                   [spacers-agg `()]
+                   [y vmargin]
+                   [prev-visible? #f]
+                   #:result (values visible-rows-agg spacers-agg))
+                  ([row (in-range rows)])
+          (define visible?
+            (or (eq? row 0)
+                (eq? row (- rows 1))
+                (memf (λ (c) (cell-in-row c row)) cells)))
+          (cond
+            [visible? (values (cons (list y row) visible-rows-agg)
+                              spacers-agg
+                              (+ y cell-side)
+                              #t)]
+            [prev-visible? (values visible-rows-agg
+                                   (cons y spacers-agg)
+                                   (+ y cell-side)
+                                   #f)]
+            [else (values visible-rows-agg spacers-agg y #f)])))
+      (define cell-positions
+        (for/list ([cell cells])
+          (define addr (memory-cell-address cell))
+          (define visible-row (findf (λ (r) (cell-in-row cell (second r))) visible-rows))
+          (define x (+ hmargin (* cell-side (remainder addr per-row))))
+          (define y (first visible-row))
+          (list x y cell)))
+      (memory-layout visible-rows spacers cell-positions))
+
+
+    (define (first-addr row)
+      (* row per-row))
+
+    (define (last-addr row)
+      (- (* (+ 1 row) per-row) 1))
+
+    (define (cell-in-row cell row)
+      (<= (first-addr row)
+          (memory-cell-address cell)
+          (last-addr row)))
+
+    ;;
+    ;; calculated variables
+    ;;
+    (define rows (ceiling (/ memory-size per-row)))
+    (define layout (get-memory-layout))
+
+    ;;
+    ;; initialize
+    ;;
+    (super-new [style `(hscroll vscroll)])
+    (let* ([visible-row-count (length (memory-layout-visible-rows layout))]
+           [spacer-count (length (memory-layout-spacers layout))]
+          [width (+ (* 2 hmargin) (* per-row cell-side))]
+          [height (+ ( * 2 vmargin) (* (+ visible-row-count spacer-count) cell-side))])
+      (send this init-auto-scrollbars width height 0 0))))

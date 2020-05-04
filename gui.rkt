@@ -4,7 +4,8 @@
          set-debug
          set-attrs)
 
-(require racket/class)
+(require racket/class
+         "memory-view.rkt")
 
 ;; public interface
 (define (show-gui)
@@ -20,8 +21,8 @@
 (define window
   (new frame%
        [label "Icon Viewer"]
-       [width 800]
-       [height 600]
+       [width 1800]
+       [height 800]
        [style `()]))
 
 (define search-box
@@ -36,8 +37,9 @@
        [spacing 5]))
 
 (define canvas
-  (new canvas%
-       [parent pane]))
+  (new memory-view%
+       [parent pane]
+       [cells (list (memory-cell 400 "SkyBlue" (λ(x) (0))))]))
 
 (define list-box-container
   (new group-box-panel%
