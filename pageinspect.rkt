@@ -10,7 +10,11 @@
 ;; data structures
 ;;
 
-(struct page-header (lsn
+;; coresponds to PageHeaderData in bufpage.h
+(struct page-header (offset
+                     len
+                     bytes
+                     lsn
                      checksum
                      flags
                      lower
@@ -21,12 +25,18 @@
                      prune_xid))
 
 ;; corresponds to ItemIdData in itemid.h
-(struct item-id (lp_off
+(struct item-id (offset
+                 len
+                 bytes
+                 lp_off
                  lp_flags
                  lp_len))
 
 ;; corresponds to HeapTupleHeaderData in htup_details.h
-(struct htup-header (t_xmin
+(struct htup-header (offset
+                     len
+                     bytes
+                     t_xmin
                      t_xmax
                      t_field3
                      t_ctid
@@ -58,6 +68,7 @@
                relname fork idx))
 
 (define (get-page-header pgc relname fork idx)
+  (define bytes (take (bytes->list (get-raw-page pgc relname fork idx)) 8))
   (define result
     (query-row pgc
                "SELECT lsn::text,
@@ -71,16 +82,24 @@
                        prune_xid::text
                 FROM page_header(get_raw_page($1, $2, $3))"
                relname fork idx))
-  (apply page-header (vector->list result)))
+  (apply page-header (append (list 0 8 bytes) (vector->list result))))
 
 (define (get-heap-tuples pgc relname fork idx)
+  (define page-bytes (bytes->list (get-raw-page pgc relname fork idx)))
   (define query "SELECT lp_off, lp_flags, lp_len, t_xmin::text, t_xmax::text,
                         t_field3, t_ctid::text, t_infomask2, t_infomask, t_hoff, t_bits, t_attrs
-                 FROM heap_page_item_attrs(get_raw_page($1, $2, $3), $1::regclass)")
-  (for/list ([row-v (query-rows pgc query relname fork idx)])
+                 FROM heap_page_item_attrs(get_raw_page($1, $2, $3), $1::regclass)
+                 ORDER BY lp")
+  (for/list ([row-v (query-rows pgc query relname fork idx)]
+             [i (in-range 1024)])
     (define row (vector->list row-v))
-    (define itemid (apply item-id (take row 3)))
-    (define header (apply htup-header (take (drop row 3) 8)))
+    (define itemid-offset (+ 8 (* 2 i)))
+    (define itemid-bytes (sublist page-bytes itemid-offset 2))
+    (define itemid (apply item-id (append (list itemid-offset 2 itemid-bytes) (take row 3))))
+    (define htup-offset (item-id-lp_off itemid))
+    (define htup-len (item-id-lp_len itemid))
+    (define htup-bytes (sublist page-bytes htup-offset htup-len))
+    (define header (apply htup-header (append (list htup-offset htup-len htup-bytes) (take (drop row 3) 8))))
     (define attrs (pg-array->list (car (drop row 11))))
     (heap-tuple itemid header attrs)))
 
@@ -106,4 +125,4 @@
   (define first-page (map bytes->hex (first pages)))
   (displayln first-page))
 
-;; (test)
+(test)

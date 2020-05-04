@@ -13,3 +13,6 @@
 
 (define (bytes->hex bs)
   (string-join (map hex-format (bytes->list bs)) " "))
+
+(define (sublist lst idx len)
+  (take (drop lst idx) len))
