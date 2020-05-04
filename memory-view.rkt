@@ -1,6 +1,7 @@
 #lang racket/gui
 
-(require racket/format)
+(require racket/format
+         "utils.rkt")
 
 (provide (all-defined-out))
 
@@ -28,7 +29,7 @@
     ;; constants
     ;;
     (define cell-side 40)
-    (define hmargin 100)
+    (define hmargin 160)
     (define vmargin 100)
 
     ;;
@@ -52,13 +53,17 @@
     (define (draw-layout dc layout)
       (send dc set-brush "black" 'transparent)
       (send dc set-font (make-object font% 12 'modern))
+      (define label-width (log memory-size 16))
       ;; draw rows
       (for ([visible-row (memory-layout-visible-rows layout)])
         (define y (first visible-row))
+        (define row (second visible-row))
         (for ([col (in-range per-row)])
           (define x (+ hmargin (* col cell-side)))
           (send dc draw-rectangle x y (+ 1 cell-side) (+ 1 cell-side)))
-        (define label "0x00000")
+        (define label (format "~a-~a"
+                              (hex-format (first-addr row) label-width)
+                              (hex-format (last-addr row) label-width)))
         (define-values (w h s1 s2) (send dc get-text-extent label))
         (define label-x (- hmargin w 10))
         (define label-y (+ y (/ cell-side 2) (* h -0.5)))

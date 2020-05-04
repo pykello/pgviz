@@ -1,7 +1,8 @@
 #lang racket
 
 (require db
-         db/util/postgresql)
+         db/util/postgresql
+         "utils.rkt")
 
 (provide (all-defined-out))
 
@@ -93,15 +94,6 @@
       [(satisfies? mid) (bs (+ mid 1) max mid)]
       [else (bs min (- mid 1) best)]))
   (bs min max default))
-
-(define (hex-format a-number)
-  (define digits "0123456789ABCDEF")
-  (string #\0 #\x
-          (string-ref digits (quotient a-number 16))
-          (string-ref digits (remainder a-number 16))))
-
-(define (bytes->hex bs)
-  (string-join (map hex-format (bytes->list bs)) " "))
 
 (define (test)
   (define pgc
