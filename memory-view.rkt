@@ -1,7 +1,8 @@
 #lang racket/gui
 
 (require racket/format
-         "utils.rkt")
+         "utils.rkt"
+         "monitor.rkt")
 
 (provide (all-defined-out))
 
@@ -15,16 +16,16 @@
                        cell-positions ;; (list (x y memory-cell))
                        ))
 
+
 (define memory-view%
-  (class canvas%
+  (class monitor-handler%
     ;;
     ;; fields
     ;;
-    (init-field [callback (λ(x) (0))]
-                [cells `()]
+    (init-field [cells `()]
                 [memory-size 8192]
-                [per-row 32])
-    (inherit get-dc get-width get-height refresh-now)
+                [per-row 32]
+                [legend legend])
 
     ;;
     ;; constants
@@ -32,61 +33,35 @@
     (define cell-side 40)
     (define hmargin 160)
     (define vmargin 100)
-
-    ;;
-    ;; public methods
-    ;;
-    (define/public (set-memory-size new-size)
-      (set! memory-size new-size)
-      (refresh-view))
-
-    (define/public (set-cells new-cells)
-      (set! cells new-cells)
-      (refresh-view))
-
-    (define/public (set-legend new-legend)
-      (set! legend new-legend)
-      (refresh-view))
+    (define layout #f)
 
     ;;
     ;; event handler
     ;;
-    (define/override (on-event event)
-      (when (and (send event button-changed? 'left)
-                 (send event button-down? 'left))
-        (let* ([x (send event get-x)]
-               [y (send event get-y)]
-               [point-in-cell? (λ (c) (and (<= (first c) x (+ (first c) cell-side))
+    (define/override (on-left-mouse-click x y)
+      (let* ([point-in-cell? (λ (c) (and (<= (first c) x (+ (first c) cell-side))
                                            (<= (second c) y (+ (second c) cell-side))))]
                [cell (findf point-in-cell? (memory-layout-cell-positions layout))])
           (when (list? cell)
             (let ([callback (memory-cell-callback (third cell))])
-              (callback 0))))))
+              (callback 0)))))
 
-    ;;
-    ;; how to paint this?
-    ;;
-    (define/override (on-paint)
-      (define dc (get-dc))
-      (send dc draw-bitmap bmp 0 0))
+    (define/override (paint dc)
+      (set! layout (get-memory-layout))
+      (draw-layout dc layout)
+      (draw-legend dc legend))
+
+    (define/override (get-width)
+      (+ (* 2 hmargin) (* per-row cell-side)))
+
+    (define/override (get-height)
+      (let* ([visible-row-count (length (memory-layout-visible-rows layout))]
+             [spacer-count (length (memory-layout-spacers layout))])
+        (+ ( * 2 vmargin) (* (+ visible-row-count spacer-count) cell-side))))
 
     ;;
     ;; private methods
     ;;
-    (define (refresh-view)
-      (define dc (send bmp make-dc))
-      (send dc clear)
-      (set! layout (get-memory-layout))
-      (draw-layout dc layout)
-      (draw-legend dc legend)
-      (send dc flush)
-      (let* ([visible-row-count (length (memory-layout-visible-rows layout))]
-             [spacer-count (length (memory-layout-spacers layout))]
-             [width (+ (* 2 hmargin) (* per-row cell-side))]
-             [height (+ ( * 2 vmargin) (* (+ visible-row-count spacer-count) cell-side))])
-        (send this init-auto-scrollbars width height 0 0))
-      (send this refresh-now))
-
     (define (draw-legend dc legend)
       (for ([item legend]
             [i (in-range 40)])
@@ -186,8 +161,4 @@
     ;;
     ;; initialize
     ;;
-    (super-new [style `(hscroll vscroll)])
-    (define layout #f)
-    (define bmp (make-object bitmap% 2800 2800))
-    (define legend `(("Medium Turquoise" "ItemId")
-                     ("Medium Goldenrod" "Page Header")))))
+    (super-new)))

@@ -4,7 +4,8 @@
          racket/draw
          "gui.rkt"
          "memory-view.rkt"
-         "pageinspect.rkt")
+         "pageinspect.rkt"
+         "monitor.rkt")
 
 (define header-brush "Medium Goldenrod")
 (define itemid-brush1 "LightSkyBlue")
@@ -19,22 +20,25 @@
   (show-gui)
   (set-debug "Sample debug message")
   (set-attrs `("1" "2" "3" "4") `("v1" "v2" "v3" "v4x"))
-  (set-memory-page-cells (list (memory-cell 401 64 "SkyBlue" (λ(x) (0)))
-                               (memory-cell 430 23 "Moccasin" (λ(x) (0)))
-                               (memory-cell 402 65 "Khaki" (λ(x) (0)))))
-  (set-memory-view-legend `((,header-brush "Page Header")
+  (set-monitor-handler (load-heap-page pgc "t" "main" 0)))
+
+
+(define (load-heap-page pgc rel fork idx)
+  (define legend `((,header-brush "Page Header")
                             (,itemid-brush1 "ItemId")
                             (,itemid-brush2 "ItemId")
                             (,htup-brush "Heap Tuple Data")
                             (,htup-header-brush "Heap Tuple Header")))
-  (load-heap-page pgc "t" "main" 0))
 
-(define (load-heap-page pgc rel fork idx)
   (define page-header (get-page-header pgc rel fork idx))
-  (set-memory-page-size (page-header-pagesize page-header))
+  (define page-size (page-header-pagesize page-header))
   (define header-cells (page-header->memory-cells page-header))
   (define tuple-cells (htups->memory-cells (get-heap-tuples pgc rel fork idx)))
-  (set-memory-page-cells (append header-cells tuple-cells)))
+  (define cells (append header-cells tuple-cells))
+  (new memory-view%
+       [cells cells]
+       [legend legend]
+       [memory-size page-size]))
 
 (define (page-header->memory-cells header)
   (for/list ([value (page-header-bytes header)]

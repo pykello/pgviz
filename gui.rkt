@@ -3,12 +3,11 @@
 (provide show-gui
          set-debug
          set-attrs
-         set-memory-page-cells
-         set-memory-page-size
-         set-memory-view-legend)
+         set-monitor-handler)
 
 (require racket/class
-         "memory-view.rkt")
+         "memory-view.rkt"
+         "monitor.rkt")
 
 ;; public interface
 (define (show-gui)
@@ -20,14 +19,8 @@
 (define (set-attrs . v)
   (send/apply list-box set v))
 
-(define (set-memory-page-cells cells)
-  (send canvas set-cells cells))
-
-(define (set-memory-page-size size)
-  (send canvas set-memory-size size))
-
-(define (set-memory-view-legend legend)
-  (send canvas set-legend legend))
+(define (set-monitor-handler handler)
+  (send canvas set-handler handler))
 
 ;; gui definition
 (define window
@@ -48,10 +41,14 @@
        [horiz-margin 5]
        [spacing 5]))
 
+;;(define canvas
+;;  (new memory-view%
+;;       [parent pane]
+;;       [cells (list (memory-cell 400 65 "SkyBlue" (λ(x) (0))))]))
+
 (define canvas
-  (new memory-view%
-       [parent pane]
-       [cells (list (memory-cell 400 65 "SkyBlue" (λ(x) (0))))]))
+  (new monitor%
+       [parent pane]))
 
 (define list-box-container
   (new group-box-panel%
