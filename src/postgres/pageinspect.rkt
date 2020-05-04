@@ -106,13 +106,16 @@
     (define htup-offset (item-id-lp_off itemid))
     (define htup-len (item-id-lp_len itemid))
     (define htup-bytes (sublist page-bytes htup-offset htup-len))
-    (define htup-header-bytes (take htup-bytes htup-header-size))
-    (define htup-data-bytes (drop htup-bytes htup-header-size))
-    (define header (apply htup-header (append (list htup-offset htup-header-size htup-header-bytes) (take (drop row 3) 8))))
-    (define attrs (pg-array->list (car (drop row 11))))
-    (define data-offset (+ htup-offset htup-header-size))
-    (define data-len (- htup-len htup-header-size))
-    (heap-tuple itemid header data-offset data-len htup-data-bytes attrs)))
+    (cond
+      [(> htup-len 0)
+       (let* [(htup-header-bytes (take htup-bytes htup-header-size))
+              (htup-data-bytes (drop htup-bytes htup-header-size))
+              (header (apply htup-header (append (list htup-offset htup-header-size htup-header-bytes) (take (drop row 3) 8))))
+              (attrs (pg-array->list (car (drop row 11))))
+              (data-offset (+ htup-offset htup-header-size))
+              (data-len (- htup-len htup-header-size))]
+         (heap-tuple itemid header data-offset data-len htup-data-bytes attrs))]
+      [else (heap-tuple itemid #f 0 0 `() `())])))
 
 ;; Finds maximum value v in [min, max] which (satisifies? v)
 ;; If not found, default is returned.
@@ -136,4 +139,4 @@
   (define first-page (map bytes->hex (first pages)))
   (displayln first-page))
 
-(test)
+;;(test)

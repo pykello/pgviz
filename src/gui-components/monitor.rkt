@@ -19,7 +19,7 @@
     (define/public (paint dc)
       (send dc draw-text "Default Monitor Handler" 10 10))
 
-    (define bmp (make-object bitmap% 2800 2800))
+    (define bmp (make-object bitmap% 2000 11000))
     (let ([dc (send bmp make-dc)])
       (send dc clear)
       (send this paint dc))
