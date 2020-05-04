@@ -44,6 +44,10 @@
       (set! cells new-cells)
       (refresh-view))
 
+    (define/public (set-legend new-legend)
+      (set! legend new-legend)
+      (refresh-view))
+
     ;;
     ;; event handler
     ;;
@@ -74,6 +78,7 @@
       (send dc clear)
       (set! layout (get-memory-layout))
       (draw-layout dc layout)
+      (draw-legend dc legend)
       (send dc flush)
       (let* ([visible-row-count (length (memory-layout-visible-rows layout))]
              [spacer-count (length (memory-layout-spacers layout))]
@@ -81,6 +86,17 @@
              [height (+ ( * 2 vmargin) (* (+ visible-row-count spacer-count) cell-side))])
         (send this init-auto-scrollbars width height 0 0))
       (send this refresh-now))
+
+    (define (draw-legend dc legend)
+      (for ([item legend]
+            [i (in-range 40)])
+        (define brush (first item))
+        (define label (second item))
+        (define x (+ 50 (* 200 (quotient i 2))))
+        (define y (+ 20 (* 30 (remainder i 2))))
+        (send dc set-brush (->brush brush))
+        (send dc draw-rectangle x y 20 20)
+        (send dc draw-text label (+ x 25) y)))
 
     (define (draw-layout dc layout)
       (send dc set-brush "black" 'transparent)
@@ -113,10 +129,7 @@
         (define x (first cell-pos))
         (define y (second cell-pos))
         (define cell (third cell-pos))
-        (define brush (memory-cell-color cell))
-        (if (string? brush)
-            (send dc set-brush brush 'solid)
-            (send dc set-brush brush))
+        (send dc set-brush (->brush (memory-cell-color cell)))
         (send dc draw-rectangle x y (+ 1 cell-side) (+ 1 cell-side))
         (define label (hex-format (memory-cell-value cell) 2 ""))
         (define-values (w h s1 s2) (send dc get-text-extent label))
@@ -167,9 +180,14 @@
           (memory-cell-address cell)
           (last-addr row)))
 
+    (define (->brush v)
+      (if (string? v) (make-object brush% v) v))
+
     ;;
     ;; initialize
     ;;
     (super-new [style `(hscroll vscroll)])
     (define layout #f)
-    (define bmp (make-object bitmap% 2800 2800))))
+    (define bmp (make-object bitmap% 2800 2800))
+    (define legend `(("Medium Turquoise" "ItemId")
+                     ("Medium Goldenrod" "Page Header")))))

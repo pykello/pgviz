@@ -6,6 +6,12 @@
          "memory-view.rkt"
          "pageinspect.rkt")
 
+(define header-brush "Medium Goldenrod")
+(define itemid-brush1 "LightSkyBlue")
+(define itemid-brush2 "Medium Turquoise")
+(define htup-brush "NavajoWhite")
+(define htup-header-brush (make-object brush% "NavajoWhite" 'bdiagonal-hatch))
+
 (define (main)
   (define pgc
     (postgresql-connect #:user "hadi"
@@ -16,6 +22,11 @@
   (set-memory-page-cells (list (memory-cell 401 64 "SkyBlue" (λ(x) (0)))
                                (memory-cell 430 23 "Moccasin" (λ(x) (0)))
                                (memory-cell 402 65 "Khaki" (λ(x) (0)))))
+  (set-memory-view-legend `((,header-brush "Page Header")
+                            (,itemid-brush1 "ItemId")
+                            (,itemid-brush2 "ItemId")
+                            (,htup-brush "Heap Tuple Data")
+                            (,htup-header-brush "Heap Tuple Header")))
   (load-heap-page pgc "t" "main" 0))
 
 (define (load-heap-page pgc rel fork idx)
@@ -28,15 +39,13 @@
 (define (page-header->memory-cells header)
   (for/list ([value (page-header-bytes header)]
              [addr (in-range (page-header-offset header) (page-header-len header))])
-    (memory-cell addr value "Medium Goldenrod" (λ (c) (displayln "Header was clicked")))))
+    (memory-cell addr value header-brush (λ (c) (displayln "Header was clicked")))))
 
 (define (htups->memory-cells htups)
-  (define header-brush
-    (make-object brush% "NavajoWhite" 'bdiagonal-hatch))
   (flatten
    (for/list ([tup htups]
               [idx (in-range 1024)])
-     (define itemid-color (if (odd? idx) "LightSkyBlue" "Medium Turquoise"))
+     (define itemid-color (if (odd? idx) itemid-brush1 itemid-brush2))
      (define itemid (heap-tuple-itemid tup))
      (define itemid-from (item-id-offset itemid))
      (define itemid-to (+ itemid-from (item-id-len itemid)))
@@ -48,12 +57,12 @@
      (define header-cells (bytes->cells (htup-header-bytes header)
                                        (htup-header-offset header)
                                        (htup-header-len header)
-                                       header-brush
+                                       htup-header-brush
                                        (λ (c) (displayln "Tuple header was clicked"))))
      (define data-cells (bytes->cells (heap-tuple-data-bytes tup)
                                       (heap-tuple-data-offset tup)
                                       (heap-tuple-data-len tup)
-                                      "NavajoWhite"
+                                      htup-brush
                                       (λ (c) (displayln "Tuple was clicked"))))
      (append itemid-cells header-cells data-cells))))
 

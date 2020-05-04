@@ -4,7 +4,8 @@
          set-debug
          set-attrs
          set-memory-page-cells
-         set-memory-page-size)
+         set-memory-page-size
+         set-memory-view-legend)
 
 (require racket/class
          "memory-view.rkt")
@@ -24,6 +25,9 @@
 
 (define (set-memory-page-size size)
   (send canvas set-memory-size size))
+
+(define (set-memory-view-legend legend)
+  (send canvas set-legend legend))
 
 ;; gui definition
 (define window
