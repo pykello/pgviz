@@ -28,7 +28,7 @@
 ;; gui definition
 (define window
   (new frame%
-       [label "Icon Viewer"]
+       [label "PostgreSQL Visualizer"]
        [width 1800]
        [height 800]
        [style `()]))

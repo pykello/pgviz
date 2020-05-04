@@ -38,13 +38,11 @@
     ;;
     (define/public (set-memory-size new-size)
       (set! memory-size new-size)
-      (set! layout (get-memory-layout))
-      (send this refresh-now))
+      (refresh-view))
 
     (define/public (set-cells new-cells)
       (set! cells new-cells)
-      (set! layout (get-memory-layout))
-      (send this refresh-now))
+      (refresh-view))
 
     ;;
     ;; event handler
@@ -57,13 +55,24 @@
     ;;
     (define/override (on-paint)
       (define dc (get-dc))
-
-      ;; draw grid
-      (draw-layout dc layout))
+      (send dc draw-bitmap bmp 0 0))
 
     ;;
     ;; private methods
     ;;
+    (define (refresh-view)
+      (define dc (send bmp make-dc))
+      (send dc clear)
+      (define layout (get-memory-layout))
+      (draw-layout dc layout)
+      (send dc flush)
+      (let* ([visible-row-count (length (memory-layout-visible-rows layout))]
+             [spacer-count (length (memory-layout-spacers layout))]
+             [width (+ (* 2 hmargin) (* per-row cell-side))]
+             [height (+ ( * 2 vmargin) (* (+ visible-row-count spacer-count) cell-side))])
+        (send this init-auto-scrollbars width height 0 0))
+      (send this refresh-now))
+
     (define (draw-layout dc layout)
       (send dc set-brush "black" 'transparent)
       (send dc set-font (make-object font% 12 'modern))
@@ -138,7 +147,6 @@
           (list x y cell)))
       (memory-layout visible-rows spacers cell-positions))
 
-
     (define (first-addr row)
       (* row per-row))
 
@@ -151,16 +159,7 @@
           (last-addr row)))
 
     ;;
-    ;; calculated variables
-    ;;
-    (define layout (get-memory-layout))
-
-    ;;
     ;; initialize
     ;;
     (super-new [style `(hscroll vscroll)])
-    (let* ([visible-row-count (length (memory-layout-visible-rows layout))]
-           [spacer-count (length (memory-layout-spacers layout))]
-          [width (+ (* 2 hmargin) (* per-row cell-side))]
-          [height (+ ( * 2 vmargin) (* (+ visible-row-count spacer-count) cell-side))])
-      (send this init-auto-scrollbars width height 0 0))))
+    (define bmp (make-object bitmap% 2800 2800))))
