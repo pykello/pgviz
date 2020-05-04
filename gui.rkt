@@ -3,7 +3,8 @@
 (provide show-gui
          set-debug
          set-attrs
-         set-memory-page-cells)
+         set-memory-page-cells
+         set-memory-page-size)
 
 (require racket/class
          "memory-view.rkt")
@@ -20,6 +21,9 @@
 
 (define (set-memory-page-cells cells)
   (send canvas set-cells cells))
+
+(define (set-memory-page-size size)
+  (send canvas set-memory-size size))
 
 ;; gui definition
 (define window

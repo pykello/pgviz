@@ -22,7 +22,7 @@
     ;;
     (init-field [callback (λ(x) (0))]
                 [cells `()]
-                [memory-size 4096]
+                [memory-size 8192]
                 [per-row 32])
     (inherit get-dc get-width get-height refresh-now)
 
@@ -36,6 +36,11 @@
     ;;
     ;; public methods
     ;;
+    (define/public (set-memory-size new-size)
+      (set! memory-size new-size)
+      (set! layout (get-memory-layout))
+      (send this refresh-now))
+
     (define/public (set-cells new-cells)
       (set! cells new-cells)
       (set! layout (get-memory-layout))
@@ -99,6 +104,7 @@
         (send dc draw-text label label-x label-y)))
 
     (define (get-memory-layout)
+      (define rows (ceiling (/ memory-size per-row)))
       (define-values (visible-rows spacers)
         (for/fold ([visible-rows-agg `()]
                    [spacers-agg `()]
@@ -144,7 +150,6 @@
     ;;
     ;; calculated variables
     ;;
-    (define rows (ceiling (/ memory-size per-row)))
     (define layout (get-memory-layout))
 
     ;;

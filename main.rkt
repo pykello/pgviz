@@ -18,7 +18,9 @@
   (load-heap-page pgc "t" "main" 0))
 
 (define (load-heap-page pgc rel fork idx)
-  (define header-cells (page-header->memory-cells (get-page-header pgc rel fork idx)))
+  (define page-header (get-page-header pgc rel fork idx))
+  (set-memory-page-size (page-header-pagesize page-header))
+  (define header-cells (page-header->memory-cells page-header))
   (define tuple-cells (htups->memory-cells (get-heap-tuples pgc rel fork idx)))
   (set-memory-page-cells (append header-cells tuple-cells)))
 
@@ -33,10 +35,22 @@
      (define itemid (heap-tuple-itemid tup))
      (define itemid-from (item-id-offset itemid))
      (define itemid-to (+ itemid-from (item-id-len itemid)))
-     (define itemid-cells 
-       (for/list ([value (item-id-bytes itemid)]
-                  [addr (in-range itemid-from itemid-to)])
-         (memory-cell addr value "DarkKhaki" (λ (c) (displayln "ItemId was clicked")))))
-     itemid-cells)))
+     (define itemid-cells (bytes->cells (item-id-bytes itemid)
+                                        itemid-from itemid-to
+                                        "DarkKhaki"
+                                        (λ (c) (displayln "ItemId was clicked"))))
+     (define header (heap-tuple-header tup))
+     (define tuple-from (htup-header-offset header))
+     (define tuple-to (+ tuple-from (htup-header-len header)))
+     (define tuple-cells (bytes->cells (htup-header-bytes header)
+                                       tuple-from tuple-to
+                                       "NavajoWhite"
+                                       (λ (c) (displayln "Tuple was clicked"))))
+     (append itemid-cells tuple-cells))))
+
+(define (bytes->cells bytes from to color callback) 
+  (for/list ([value bytes]
+             [addr (in-range from to)])
+    (memory-cell addr value color callback)))
 
 (main)
