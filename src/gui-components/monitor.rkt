@@ -40,9 +40,10 @@
     (define/override (on-event event)
       (when (and (send event button-changed? 'left)
                  (send event button-down? 'left))
+        (define-values (xs ys) (send this get-view-start))
         (let* ([x (send event get-x)]
                [y (send event get-y)])
-          (send handler on-left-mouse-click x y))))
+          (send handler on-left-mouse-click (+ xs x) (+ ys y)))))
 
     (define/override (on-paint)
       (define bmp (send handler get-view))
