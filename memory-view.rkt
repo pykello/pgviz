@@ -48,7 +48,16 @@
     ;; event handler
     ;;
     (define/override (on-event event)
-      0)
+      (when (and (send event button-changed? 'left)
+                 (send event button-down? 'left))
+        (let* ([x (send event get-x)]
+               [y (send event get-y)]
+               [point-in-cell? (λ (c) (and (<= (first c) x (+ (first c) cell-side))
+                                           (<= (second c) y (+ (second c) cell-side))))]
+               [cell (findf point-in-cell? (memory-layout-cell-positions layout))])
+          (when (list? cell)
+            (let ([callback (memory-cell-callback (third cell))])
+              (callback 0))))))
 
     ;;
     ;; how to paint this?
@@ -63,7 +72,7 @@
     (define (refresh-view)
       (define dc (send bmp make-dc))
       (send dc clear)
-      (define layout (get-memory-layout))
+      (set! layout (get-memory-layout))
       (draw-layout dc layout)
       (send dc flush)
       (let* ([visible-row-count (length (memory-layout-visible-rows layout))]
@@ -162,4 +171,5 @@
     ;; initialize
     ;;
     (super-new [style `(hscroll vscroll)])
+    (define layout #f)
     (define bmp (make-object bitmap% 2800 2800))))
