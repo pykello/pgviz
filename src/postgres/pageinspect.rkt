@@ -154,6 +154,11 @@
                     (if (bitwise-bit-set? f 15) "HEAP_ONLY_TUPLE" `())))
                   ", \n")))
 
+(define (pd_flags->string f)
+  (define meanings `("HAS_FREE_LINES" "PAGE_FULL" "ALL_VISIBLE"))
+  (string-append (hex-format f 1) ": \n"
+                 (string-join (bits->strings f meanings) ", \n")))
+
 (define (bits->strings f meanings)
   (flatten
    (for/list ([meaning meanings]

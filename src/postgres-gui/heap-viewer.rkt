@@ -36,7 +36,7 @@
       (set-attrs `(("Type" "Page Header")
                    ("LSN" ,(page-header-lsn header))
                    ("checksum" ,(page-header-checksum header))
-                   ("flags" ,(page-header-flags header))
+                   ("flags" ,(pd_flags->string (page-header-flags header)))
                    ("lower" ,(page-header-lower header))
                    ("upper" ,(page-header-upper header))
                    ("special" ,(page-header-special header))
