@@ -17,7 +17,7 @@
       500)
 
     (define/public (paint dc)
-      (send dc draw-text "Default Monitor Handler" 10 10))
+      (send dc draw-text "Make selections to load a view!" 10 10))
 
     (define bmp (make-object bitmap% 2000 11000))
     (let ([dc (send bmp make-dc)])
