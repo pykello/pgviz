@@ -11,11 +11,7 @@
 
 (define (main)
   (show-gui)
-  (set-debug "Sample debug message")
-  (set-attrs `(("name 1" "value 1") ("name 2" "value 2")))
-  
-  ;;(set-monitor-handler (heap-page-view pgc "pg_class" "main" 0 set-attrs)
-  )
+  (set-debug "Sample debug message"))
 
 (define (on-connect-clicked b e)
   (define hostname (send postgres-hostname get-value))
