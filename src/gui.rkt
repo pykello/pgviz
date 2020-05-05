@@ -1,13 +1,39 @@
 #lang racket/gui
 
-(provide show-gui
-         set-debug
-         set-attrs
-         set-monitor-handler)
-
-(require racket/class
+(require db
+         racket/draw
+         racket/class
          "gui-components/monitor.rkt"
-         "utils.rkt")
+         "utils.rkt"
+         "postgres-gui/heap-viewer.rkt")
+
+(define pgc #f)
+
+(define (main)
+  (show-gui)
+  (set-debug "Sample debug message")
+  (set-attrs `(("name 1" "value 1") ("name 2" "value 2")))
+  
+  ;;(set-monitor-handler (heap-page-view pgc "pg_class" "main" 0 set-attrs)
+  )
+
+(define (on-connect-clicked b e)
+  (define hostname (send postgres-hostname get-value))
+  (define port (send postgres-port get-value))
+  (define user (send postgres-user get-value))
+  (define database (send postgres-database get-value))
+  (with-handlers
+      ([exn:fail:sql? (λ (exn)
+                        (send postgres-status set-label "Not Connected!"))])
+    (when (not (eq? pgc #f))
+      (disconnect pgc))
+    (set! pgc #f)
+    (define conn (postgresql-connect #:user user
+                                     #:database database
+                                     #:server hostname
+                                     #:port (string->number port)))
+    (set! pgc conn)
+    (send postgres-status set-label "Connected!")))
 
 ;; public interface
 (define (show-gui)
@@ -22,9 +48,12 @@
   (send list-box set names values))
 
 (define (set-monitor-handler handler)
-  (send canvas set-handler handler))
+  (send monitor set-handler handler))
 
+
+;;
 ;; gui definition
+;;
 (define window
   (new frame%
        [label "PostgreSQL Visualizer"]
@@ -37,8 +66,7 @@
        [parent window]
        [horiz-margin 5]
        [spacing 5]
-       [stretchable-height #f]
-))
+       [stretchable-height #f]))
 
 (define postgres-hostname
   (new text-field%
@@ -77,21 +105,28 @@
        [parent postgres-pane]
        [label "connect"]
        [stretchable-width #f]
-       [min-width 100]))
+       [min-width 100]
+       [callback on-connect-clicked]))
 
-(define pane
+(define postgres-status
+  (new message%
+       [label "Not Connected!"]
+       [parent postgres-pane]
+       [stretchable-width #f]))
+
+(define monitor-pane
   (new horizontal-pane%
        [parent window]
        [horiz-margin 5]
        [spacing 5]))
 
-(define canvas
+(define monitor
   (new monitor%
-       [parent pane]))
+       [parent monitor-pane]))
 
 (define list-box-container
   (new group-box-panel%
-       [parent pane]
+       [parent monitor-pane]
        [label "Attributes"]
        [horiz-margin 5]
        [stretchable-width #f]
@@ -116,3 +151,4 @@
        [min-height 100]
        [style `(multiple vertical-label)]))
 
+(main)
