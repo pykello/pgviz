@@ -88,9 +88,15 @@
                              htup-header-brush
                              header-callback)]))
 
+     (define attrs
+       (for/list ([attr (heap-tuple-attrs tup)]
+                  [i (in-range 1024)])
+         (list (string-append "attrs[" (~a i) "]")
+               (substr (bytes->hex attr) 0 100))))
+
      (define tuple-callback
        (λ ()
-         (set-attrs `(("Type" "Heap Tuple Data")))))
+         (set-attrs (cons `("Type" "Heap Tuple Data") attrs))))
 
      (define data-cells (bytes->cells (heap-tuple-data-bytes tup)
                                       (heap-tuple-data-offset tup)

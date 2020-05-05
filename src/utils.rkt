@@ -12,10 +12,15 @@
   (string-append prefix (apply string digits)))
 
 (define (bytes->hex bs)
-  (string-join (map hex-format (bytes->list bs)) " "))
+  (if (bytes? bs)
+      (string-join (map hex-format (bytes->list bs)) " ")
+      "(null)"))
 
 (define (sublist lst idx len)
   (take (drop lst idx) len))
+
+(define (substr s start end)
+  (substring s start (min (string-length s) end)))
 
 (define (compose f g)
   (λ (v)
