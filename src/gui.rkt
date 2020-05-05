@@ -106,7 +106,7 @@
 
 (new button%
      [parent postgres-pane]
-     [label "connect"]
+     [label "Connect"]
      [stretchable-width #f]
      [min-width 100]
      [callback on-connect-clicked])

@@ -128,6 +128,40 @@
       [else (bs min (- mid 1) best)]))
   (bs min max default))
 
+(define (lp_flags->string f)
+  (match f
+    [0 "0: Unused"]
+    [1 "1: Normal"]
+    [2 "2: HOT Redirect"]
+    [3 "3: Dead"]))
+
+(define (t_infomask->string f)
+  (define meanings `("HASNULL" "HASVARWIDTH" "HASEXTERNAL" "HASOID_OLD" "XMAX_KEYSHR_LOCK"
+                               "COMBOCID" "XMAX_EXCL_LOCK" "XMAX_LOCK_ONLY" "XMAX_SHR_LOCK"
+                               "XMIN_COMMITTED" "XMIN_INVALID" "XMIN_FROZEN" "XMAX_COMMITTED"
+                               "XMAX_INVALID" "XMAX_IS_MULTI" "UPDATED" "MOVED_OFF" "MOVED_IN"))
+  (string-append (hex-format f 4) ": \n"
+                 (string-join (bits->strings f meanings) ", \n")))
+
+(define (t_infomask2->string f)
+  (string-append (hex-format f 4) ": \n"
+                 (string-join
+                  (flatten
+                   (list
+                    (string-append "Attributes: " (~a (bitwise-and f #x07ff)))
+                    (if (bitwise-bit-set? f 13) "KEYS_UPDATED" `())
+                    (if (bitwise-bit-set? f 14) "HOT_UPDATED" `())
+                    (if (bitwise-bit-set? f 15) "HEAP_ONLY_TUPLE" `())))
+                  ", \n")))
+
+(define (bits->strings f meanings)
+  (flatten
+   (for/list ([meaning meanings]
+              [i (in-range 128)])
+     (cond
+       [(bitwise-bit-set? f i) (list meaning)]
+       [else `()]))))
+
 (define (test)
   (define pgc
     (postgresql-connect #:user "hadi"

@@ -4,7 +4,8 @@
 
 (require "../gui-components/memory-view.rkt"
          "../gui-components/monitor.rkt"
-         "../postgres/pageinspect.rkt")
+         "../postgres/pageinspect.rkt"
+         "../utils.rkt")
 
 (define header-brush "Medium Goldenrod")
 (define itemid-brush1 "LightSkyBlue")
@@ -57,9 +58,9 @@
      (define itemid-callback
        (λ ()
          (set-attrs `(("Type" "ItemId")
-                      ("lp_off" ,(item-id-lp_off itemid))
+                      ("lp_off" ,(hex-format (item-id-lp_off itemid) 4))
                       ("lp_len" ,(item-id-lp_len itemid))
-                      ("lp_flags" ,(item-id-lp_flags itemid))))))
+                      ("lp_flags" ,(lp_flags->string (item-id-lp_flags itemid)))))))
      (define itemid-cells (bytes->cells (item-id-bytes itemid)
                                         itemid-from itemid-to
                                         itemid-color
@@ -73,8 +74,8 @@
                       ("t_xmax" ,(htup-header-t_xmax header))
                       ("t_field3" ,(htup-header-t_field3 header))
                       ("t_ctid" ,(htup-header-t_ctid header))
-                      ("t_infomask2" ,(htup-header-t_infomask2 header))
-                      ("t_infomask" ,(htup-header-t_infomask header))
+                      ("t_infomask2" ,(t_infomask2->string (htup-header-t_infomask2 header)))
+                      ("t_infomask" ,(t_infomask->string (htup-header-t_infomask header)))
                       ("t_hoff" ,(htup-header-t_hoff header))
                       ("t_bits" ,(htup-header-t_bits header))))))
                       
