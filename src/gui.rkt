@@ -35,6 +35,15 @@
     (set! pgc conn)
     (send postgres-status set-label "Connected!")))
 
+(define (on-load-clicked b e)
+  (define rel (send relation-name get-value))
+  (define idx-str (send page-index get-value))
+  (define idx (string->number idx-str))
+  (with-handlers
+      ([exn:fail:sql? (λ (exn)
+                        (message-box "Error" "Could not load view"))])
+    (set-monitor-handler (heap-page-view pgc rel "main" idx set-attrs))))
+
 ;; public interface
 (define (show-gui)
   (send window show #t))
@@ -49,7 +58,6 @@
 
 (define (set-monitor-handler handler)
   (send monitor set-handler handler))
-
 
 ;;
 ;; gui definition
@@ -100,19 +108,56 @@
        [stretchable-width #f]
        [min-width 200]))
 
-(define postgres-connect
-  (new button%
-       [parent postgres-pane]
-       [label "connect"]
-       [stretchable-width #f]
-       [min-width 100]
-       [callback on-connect-clicked]))
+(new button%
+     [parent postgres-pane]
+     [label "connect"]
+     [stretchable-width #f]
+     [min-width 100]
+     [callback on-connect-clicked])
 
 (define postgres-status
   (new message%
        [label "Not Connected!"]
        [parent postgres-pane]
        [stretchable-width #f]))
+
+(define views-pane
+  (new horizontal-pane%
+       [parent window]
+       [horiz-margin 5]
+       [spacing 5]
+       [stretchable-height #f]))
+
+(define view-type-pane
+  (new choice%
+       [parent views-pane]
+       [label "Type: "]
+       [choices (list "Heap Page")]
+       [stretchable-width #f]
+       [min-width 200]))
+
+(define relation-name
+  (new text-field%
+       [parent views-pane]
+       [label "Relation: "]
+       [init-value "pg_class"]
+       [stretchable-width #f]
+       [min-width 200]))
+
+(define page-index
+  (new text-field%
+       [parent views-pane]
+       [label "Page Index: "]
+       [init-value "0"]
+       [stretchable-width #f]
+       [min-width 200]))
+
+(new button%
+     [parent views-pane]
+     [label "Load View"]
+     [stretchable-width #f]
+     [min-width 100]
+     [callback on-load-clicked])
 
 (define monitor-pane
   (new horizontal-pane%
