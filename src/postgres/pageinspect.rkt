@@ -42,11 +42,13 @@
                      t_ctid
                      t_infomask2
                      t_infomask
-                     t_hoff
-                     t_bits))
+                     t_hoff))
 
 (struct heap-tuple (itemid
                     header
+                    bits-offset
+                    bits-bytes
+                    t_bits
                     data-offset
                     data-len
                     data-bytes
@@ -109,13 +111,19 @@
     (cond
       [(> htup-len 0)
        (let* [(htup-header-bytes (take htup-bytes htup-header-size))
-              (htup-data-bytes (drop htup-bytes htup-header-size))
-              (header (apply htup-header (append (list htup-offset htup-header-size htup-header-bytes) (take (drop row 3) 8))))
+              (header (apply htup-header
+                             (append (list htup-offset htup-header-size htup-header-bytes)
+                                     (sublist row 3 7))))
+              (t_bits (list-ref row 10))
+              (t_hoff (htup-header-t_hoff header))
+              (bits-offset (+ htup-offset htup-header-size))
+              (htup-bits-bytes (sublist htup-bytes htup-header-size (- t_hoff htup-header-size)))
+              (htup-data-bytes (drop htup-bytes t_hoff))
               (attrs (pg-array->list (car (drop row 11))))
-              (data-offset (+ htup-offset htup-header-size))
-              (data-len (- htup-len htup-header-size))]
-         (heap-tuple itemid header data-offset data-len htup-data-bytes attrs))]
-      [else (heap-tuple itemid #f 0 0 `() `())])))
+              (data-offset (+ htup-offset t_hoff))
+              (data-len (- htup-len t_hoff))]
+         (heap-tuple itemid header bits-offset htup-bits-bytes t_bits data-offset data-len htup-data-bytes attrs))]
+      [else (heap-tuple itemid #f 0 `() "" 0 0 `() `())])))
 
 ;; Finds maximum value v in [min, max] which (satisifies? v)
 ;; If not found, default is returned.
@@ -171,11 +179,11 @@
   (define pgc
     (postgresql-connect #:user "hadi"
                         #:database "postgres"))
-  (displayln (bytes-length (get-raw-page pgc "t" "main" 0)))
+  (displayln (bytes-length (get-raw-page pgc "pg_class" "main" 0)))
   (displayln (relation-page-count pgc "pg_class" "main"))
   (displayln (page-header-pagesize (get-page-header pgc "pg_class" "main" 0)))
-  (define pages (map heap-tuple-attrs (get-heap-tuples pgc "t" "main" 0)))
+  (define pages (map heap-tuple-attrs (get-heap-tuples pgc "x" "main" 0)))
   (define first-page (map bytes->hex (first pages)))
   (displayln first-page))
 
-;;(test)
+(test)

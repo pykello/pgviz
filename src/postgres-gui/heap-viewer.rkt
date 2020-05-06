@@ -3,22 +3,24 @@
 (provide heap-page-view)
 
 (require "../gui-components/memory-view.rkt"
-         "../gui-components/monitor.rkt"
          "../postgres/pageinspect.rkt"
-         "../utils.rkt")
+         "../utils.rkt"
+         db)
 
 (define header-brush "Medium Goldenrod")
 (define itemid-brush1 "LightSkyBlue")
 (define itemid-brush2 "Medium Turquoise")
 (define htup-brush "NavajoWhite")
 (define htup-header-brush (make-object brush% "NavajoWhite" 'bdiagonal-hatch))
+(define htup-bits-brush (make-object brush% "VioletRed" 'bdiagonal-hatch))
 
 (define (heap-page-view pgc rel fork idx set-attrs)
   (define legend `((,header-brush "Page Header")
                             (,itemid-brush1 "ItemId")
                             (,itemid-brush2 "ItemId")
                             (,htup-brush "Heap Tuple Data")
-                            (,htup-header-brush "Heap Tuple Header")))
+                            (,htup-header-brush "Heap Tuple Header")
+                            (,htup-bits-brush "Heap Null Bitmap")))
 
   (define page-header (get-page-header pgc rel fork idx))
   (define page-size (page-header-pagesize page-header))
@@ -54,7 +56,6 @@
      (define itemid-color (if (odd? idx) itemid-brush1 itemid-brush2))
      (define itemid (heap-tuple-itemid tup))
      (define itemid-from (item-id-offset itemid))
-     (define itemid-to (+ itemid-from (item-id-len itemid)))
      (define itemid-callback
        (λ ()
          (set-attrs `(("Type" "ItemId")
@@ -62,7 +63,7 @@
                       ("lp_len" ,(item-id-lp_len itemid))
                       ("lp_flags" ,(lp_flags->string (item-id-lp_flags itemid)))))))
      (define itemid-cells (bytes->cells (item-id-bytes itemid)
-                                        itemid-from itemid-to
+                                        itemid-from
                                         itemid-color
                                         itemid-callback))
 
@@ -77,16 +78,35 @@
                       ("t_infomask2" ,(t_infomask2->string (htup-header-t_infomask2 header)))
                       ("t_infomask" ,(t_infomask->string (htup-header-t_infomask header)))
                       ("t_hoff" ,(htup-header-t_hoff header))
-                      ("t_bits" ,(htup-header-t_bits header))))))
+                      ("t_bits" "")))))
                       
      (define header-cells
        (cond
          [(eq? header #f) `()]
          [else (bytes->cells (htup-header-bytes header)
                              (htup-header-offset header)
-                             (htup-header-len header)
                              htup-header-brush
                              header-callback)]))
+
+     (define t_bits (heap-tuple-t_bits tup))
+     (define bits
+       (for/list ([bit (string->list (~a t_bits))]
+                  [i (in-range 1024)])
+         (list (string-append "t_bits[" (~a i) "]")
+               (substr (~a bit) 0 100))))
+
+     (define bits-callback
+       (λ ()
+         (set-attrs (cons `("Type" "Heap Null Bitmap")
+                          (if (sql-null? t_bits)
+                              `(("t_bits" "(null)"))
+                              bits)))))
+
+     (define bits-cells
+       (bytes->cells (heap-tuple-bits-bytes tup)
+                     (heap-tuple-bits-offset tup)
+                     htup-bits-brush
+                     bits-callback))
 
      (define attrs
        (for/list ([attr (heap-tuple-attrs tup)]
@@ -100,12 +120,12 @@
 
      (define data-cells (bytes->cells (heap-tuple-data-bytes tup)
                                       (heap-tuple-data-offset tup)
-                                      (heap-tuple-data-len tup)
                                       htup-brush
                                       tuple-callback))
-     (append itemid-cells header-cells data-cells))))
+     (append itemid-cells header-cells bits-cells data-cells))))
 
-(define (bytes->cells bytes from len color callback)
+(define (bytes->cells bytes from color callback)
+  (define len (length bytes))
   (define to (+ from len))
   (for/list ([value bytes]
              [addr (in-range from to)])
