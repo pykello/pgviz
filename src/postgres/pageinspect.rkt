@@ -159,11 +159,14 @@
                  (string-join
                   (flatten
                    (list
-                    (string-append "Attributes: " (~a (bitwise-and f #x07ff)))
+                    (string-append "Attributes: " (~a (bitwise-and f )))
                     (if (bitwise-bit-set? f 13) "KEYS_UPDATED" `())
                     (if (bitwise-bit-set? f 14) "HOT_UPDATED" `())
                     (if (bitwise-bit-set? f 15) "HEAP_ONLY_TUPLE" `())))
                   ", \n")))
+
+(define (htup-header-nattrs h)
+  (bitwise-and (htup-header-t_infomask2 h) #x07ff))
 
 (define (pd_flags->string f)
   (define meanings `("HAS_FREE_LINES" "PAGE_FULL" "ALL_VISIBLE"))

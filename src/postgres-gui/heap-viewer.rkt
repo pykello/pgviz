@@ -99,10 +99,14 @@
                              htup-header-brush
                              header-callback)]))
 
+     (define nattrs
+       (cond
+         [(eq? header #f) 0]
+         [else (htup-header-nattrs header)]))
      (define t_bits (heap-tuple-t_bits tup))
      (define bits
        (for/list ([bit (string->list (~a t_bits))]
-                  [i (in-range 1024)])
+                  [i (in-range nattrs)])
          (list (string-append "t_bits[" (~a i) "]")
                (substr (~a bit) 0 100))))
 
