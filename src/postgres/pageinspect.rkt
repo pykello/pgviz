@@ -91,7 +91,7 @@
                        pagesize,
                        version,
                        prune_xid::text,
-                       substring(r.bytes, special)
+                       substring(r.bytes, special+1)
                 FROM r, page_header(r.bytes)"
                relname fork idx))
   (apply page-header (append (list 0 page-header-size bytes) (vector->list result))))
