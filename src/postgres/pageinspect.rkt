@@ -22,7 +22,8 @@
                      special
                      pagesize
                      version
-                     prune_xid))
+                     prune_xid
+                     special-bytes))
 
 ;; corresponds to ItemIdData in itemid.h
 (struct item-id (offset
@@ -80,7 +81,8 @@
   (define bytes (take (bytes->list (get-raw-page pgc relname fork idx)) page-header-size))
   (define result
     (query-row pgc
-               "SELECT lsn::text,
+               "WITH r AS (SELECT get_raw_page($1, $2, $3) bytes)
+                SELECT lsn::text,
                        checksum,
                        flags,
                        lower,
@@ -88,8 +90,9 @@
                        special,
                        pagesize,
                        version,
-                       prune_xid::text
-                FROM page_header(get_raw_page($1, $2, $3))"
+                       prune_xid::text,
+                       substring(r.bytes, special)
+                FROM r, page_header(r.bytes)"
                relname fork idx))
   (apply page-header (append (list 0 page-header-size bytes) (vector->list result))))
 
@@ -186,4 +189,4 @@
   (define first-page (map bytes->hex (first pages)))
   (displayln first-page))
 
-(test)
+;;(test)

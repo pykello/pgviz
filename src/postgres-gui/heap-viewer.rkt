@@ -45,9 +45,20 @@
                    ("pagesize" ,(page-header-pagesize header))
                    ("version" ,(page-header-version header))
                    ("prune_xid" ,(page-header-version header))))))
-  (for/list ([value (page-header-bytes header)]
+  (define header-cells
+    (for/list ([value (page-header-bytes header)]
              [addr (in-range (page-header-offset header) (page-header-len header))])
     (memory-cell addr value header-brush callback)))
+
+  (define special-callback
+    (λ ()
+      (set-attrs `(("Type" "Special")))))
+  (define special-cells
+    (for/list ([value (page-header-special-bytes header)]
+               [addr (in-range (page-header-special header) (page-header-pagesize header))])
+      (memory-cell addr value header-brush special-callback)))
+
+  (append header-cells special-cells))
 
 (define (htups->memory-cells htups set-attrs)
   (flatten
