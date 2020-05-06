@@ -38,10 +38,14 @@
           (define idx-str (send page-index get-value))
           (define idx (string->number idx-str))
           (with-handlers
-              ([exn:fail:sql? (λ (exn)
-                                (message-box "Error" "Could not load view"))])
+              ([exn:fail:sql? show-postgres-error])
             (set-monitor-handler (heap-page-view pgc rel "main" idx set-attrs)))]))
 
+(define (show-postgres-error e)
+  (define info (make-hash (exn:fail:sql-info e)))
+  (message-box "Error"
+               (string-append "ERROR: "
+                              (hash-ref info 'message ""))))
 ;; public interface
 (define (show-gui)
   (send window show #t))
