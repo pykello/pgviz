@@ -32,13 +32,15 @@
     (send postgres-status set-label "Connected!")))
 
 (define (on-load-clicked b e)
-  (define rel (send relation-name get-value))
-  (define idx-str (send page-index get-value))
-  (define idx (string->number idx-str))
-  (with-handlers
-      ([exn:fail:sql? (λ (exn)
-                        (message-box "Error" "Could not load view"))])
-    (set-monitor-handler (heap-page-view pgc rel "main" idx set-attrs))))
+  (cond
+    [(eq? pgc #f) (message-box "Error" "Not connected yet")]
+    [else (define rel (send relation-name get-value))
+          (define idx-str (send page-index get-value))
+          (define idx (string->number idx-str))
+          (with-handlers
+              ([exn:fail:sql? (λ (exn)
+                                (message-box "Error" "Could not load view"))])
+            (set-monitor-handler (heap-page-view pgc rel "main" idx set-attrs)))]))
 
 ;; public interface
 (define (show-gui)
@@ -104,12 +106,13 @@
        [stretchable-width #f]
        [min-width 200]))
 
-(new button%
-     [parent postgres-pane]
-     [label "Connect"]
-     [stretchable-width #f]
-     [min-width 100]
-     [callback on-connect-clicked])
+(define connect-button
+  (new button%
+       [parent postgres-pane]
+       [label "Connect"]
+       [stretchable-width #f]
+       [min-width 100]
+       [callback on-connect-clicked]))
 
 (define postgres-status
   (new message%
@@ -148,12 +151,13 @@
        [stretchable-width #f]
        [min-width 200]))
 
-(new button%
-     [parent views-pane]
-     [label "Load View"]
-     [stretchable-width #f]
-     [min-width 100]
-     [callback on-load-clicked])
+(define load-view-button
+  (new button%
+       [parent views-pane]
+       [label "Load View"]
+       [stretchable-width #f]
+       [min-width 100]
+       [callback on-load-clicked]))
 
 (define monitor-pane
   (new horizontal-pane%
