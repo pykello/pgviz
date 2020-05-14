@@ -41,9 +41,9 @@
             [default (displayln "invalid choice")])]))
 
 (define (load-heap-page)
-  (let ([rel (send relation-name get-value)]
-        [idx-str (send page-index get-value)]
-        [idx (string->number idx-str)])
+  (let* ([rel (send relation-name get-value)]
+         [idx-str (send page-index get-value)]
+         [idx (string->number idx-str)])
     (with-handlers
         ([exn:fail:sql? show-postgres-error])
       (set-monitor-handler (heap-page-view pgc rel "main" idx set-attrs)))))

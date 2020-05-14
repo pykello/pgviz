@@ -55,6 +55,17 @@
                     data-bytes
                     attrs))
 
+;; corresponds to BTMetaPageData in nbtree.h
+(struct btree-meta (magic
+                    version
+                    root
+                    level
+                    fastroot
+                    fastlevel
+                    oldest_xact
+                    last_cleanup_num_tuples))
+
+
 ;; exported functions
 
 (define (page-exists? pgc relname fork idx)
@@ -72,6 +83,12 @@
   (query-value pgc
                "SELECT * FROM get_raw_page($1, $2, $3)"
                relname fork idx))
+
+
+(define (get-btree-meta pgc relname)
+  (define result
+    (query-row pgc "SELECT * FROM bt_metap($1)" relname))
+  (apply btree-meta (vector->list result)))
 
 (define page-header-size 24)
 (define itemid-size 4)
@@ -190,6 +207,7 @@
   (displayln (page-header-pagesize (get-page-header pgc "pg_class" "main" 0)))
   (define pages (map heap-tuple-attrs (get-heap-tuples pgc "x" "main" 0)))
   (define first-page (map bytes->hex (first pages)))
-  (displayln first-page))
+  (displayln first-page)
+  (displayln (btree-meta-version (get-btree-meta pgc "pg_class_oid_index"))))
 
-;;(test)
+(test)
