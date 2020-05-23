@@ -77,6 +77,12 @@
                           btpo
                           btpo_flags))
 
+(struct btree-page-item (offset
+                         ctid
+                         len
+                         nulls
+                         vars
+                         data))
 
 ;; exported functions
 
@@ -117,6 +123,14 @@
           (cons (char->btree-page-type (second result))
                 (cddr result))))
   (apply btree-page-stats sanitized))
+
+(define (get-btree-page-items pgc relname idx)
+  (define result
+    (query-rows pgc "SELECT itemoffset, ctid::text, itemlen,
+                            nulls, vars, data
+                     FROM bt_page_items($1, $2)" relname idx))
+  (map (λ (r) (apply btree-page-item (vector->list r)))
+       result))
 
 (define page-header-size 24)
 (define itemid-size 4)
@@ -237,6 +251,7 @@
   (define first-page (map bytes->hex (first pages)))
   (displayln first-page)
   (define root (btree-meta-root (get-btree-meta pgc "pg_class_oid_index")))
-  (displayln (btree-page-stats-type (get-btree-page-stats pgc "pg_class_oid_index" root))))
+  (displayln (btree-page-stats-type (get-btree-page-stats pgc "pg_class_oid_index" root)))
+  (displayln (get-btree-page-items pgc "pg_class_oid_index" root)))
 
 (test)
