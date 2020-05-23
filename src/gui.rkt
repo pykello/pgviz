@@ -1,11 +1,11 @@
 #lang racket/gui
 
 (require db
-         racket/draw
          racket/class
          "gui-components/monitor.rkt"
          "utils.rkt"
-         "postgres-gui/heap-viewer.rkt")
+         "postgres-gui/heap-viewer.rkt"
+         "postgres-gui/btree-viewer.rkt")
 
 (define pgc #f)
 
@@ -49,7 +49,10 @@
       (set-monitor-handler (heap-page-view pgc rel "main" idx set-attrs)))))
 
 (define (load-btree-index)
-  (message-box "Error" "Not implemented yet"))
+  (let* ([name (send btree-name get-value)])
+    (with-handlers
+        ([exn:fail:sql? show-postgres-error])
+      (set-monitor-handler (btree-view pgc name set-attrs)))))
 
 (define (show-postgres-error e)
   (define info (make-hash (exn:fail:sql-info e)))
