@@ -65,6 +65,18 @@
                     oldest_xact
                     last_cleanup_num_tuples))
 
+(struct btree-page-stats (blkno
+                          type
+                          live_items
+                          dead_items
+                          avg_item_size
+                          page_size
+                          free_size
+                          btpo_prev
+                          btpo_next
+                          btpo
+                          btpo_flags))
+
 
 ;; exported functions
 
@@ -87,8 +99,24 @@
 
 (define (get-btree-meta pgc relname)
   (define result
-    (query-row pgc "SELECT * FROM bt_metap($1)" relname))
-  (apply btree-meta (vector->list result)))
+    (vector->list
+     (query-row pgc "SELECT * FROM bt_metap($1)" relname)))
+  (apply btree-meta result))
+
+(define (get-btree-page-stats pgc relname idx)
+  (define (char->btree-page-type c)
+    (match c
+      [#\r 'root]
+      [#\l 'leaf]
+      [#\i 'internal]))
+  (define result
+    (vector->list 
+     (query-row pgc "SELECT * FROM bt_page_stats($1, $2)" relname idx)))
+  (define sanitized
+    (cons (first result)
+          (cons (char->btree-page-type (second result))
+                (cddr result))))
+  (apply btree-page-stats sanitized))
 
 (define page-header-size 24)
 (define itemid-size 4)
@@ -205,9 +233,10 @@
   (displayln (bytes-length (get-raw-page pgc "pg_class" "main" 0)))
   (displayln (relation-page-count pgc "pg_class" "main"))
   (displayln (page-header-pagesize (get-page-header pgc "pg_class" "main" 0)))
-  (define pages (map heap-tuple-attrs (get-heap-tuples pgc "x" "main" 0)))
+  (define pages (map heap-tuple-attrs (get-heap-tuples pgc "pg_class" "main" 0)))
   (define first-page (map bytes->hex (first pages)))
   (displayln first-page)
-  (displayln (btree-meta-version (get-btree-meta pgc "pg_class_oid_index"))))
+  (define root (btree-meta-root (get-btree-meta pgc "pg_class_oid_index")))
+  (displayln (btree-page-stats-type (get-btree-page-stats pgc "pg_class_oid_index" root))))
 
 (test)
