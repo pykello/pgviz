@@ -1,19 +1,27 @@
 #lang racket
 
 (require racket/format
+         pict
+         db
+         db/util/postgresql
          "../utils.rkt"
-         "../gui-components/monitor.rkt")
+         "../gui-components/monitor.rkt"
+         "../postgres/btree_inspect.rkt")
 
 (provide (all-defined-out))
 
 (define (btree-view pgc name set-attrs)
-  (new btree-view%))
+  (define btree (new btree%
+                     [relname name]
+                     [pgc pgc]))
+                     
+  (new btree-view%
+       [btree btree]))
 
 (define btree-view%
   (class monitor-handler%
 
-    (init-field [meta `()]
-                [root `()]
+    (init-field btree
                 [visible-levels 3]
                 [max-visible-items 3])
 
@@ -38,7 +46,57 @@
     (super-new)))
 
 
+(define (btree-leaf-pict node [max-visible-items 3])
+  (define xmargin 14)
+  (define ymargin 16)
+  (define items (send node get-items))
+  (define item-picts
+    (cond
+      [(<= (length items) 3)
+       (map leaf-item-pict items)]
+      [else
+       (list (leaf-item-pict (first items))
+             (leaf-item-pict (second items))
+             (text "...")
+             (leaf-item-pict (last items)))]))
+  (define contents
+    (apply hc-append (cons 5 item-picts)))
+  (define w (pict-width contents))
+  (define h (pict-height contents))
+  (define frame
+    (filled-rectangle
+     (+ w xmargin)
+     (+ h ymargin)
+     #:color "gray"))
+  (cc-superimpose frame contents))
 
+(define (leaf-item-pict item)
+  (define xmargin 5)
+  (define ymargin 10)
+  (define v (car item))
+  (define v-pict (text v))
+  (define w (pict-width v-pict))
+  (define h (pict-height v-pict))
+  (define frame
+    (filled-rounded-rectangle
+     (+ w xmargin)
+     (+ h ymargin)
+     #:color "white"))
+  (cc-superimpose frame v-pict))
+
+(define (test)
+  (define pgc
+    (postgresql-connect #:user "hadi"
+                        #:database "postgres"))
+  (define btree (new btree%
+                    [relname "t2_idx"]
+                    [pgc pgc]))
+  (define root (send btree get-root))
+  (define root-items (send root get-items))
+  (define attr-types (send root get-attr-types))
+  (btree-leaf-pict root))
+
+(test)
 
 
 

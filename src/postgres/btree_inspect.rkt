@@ -4,6 +4,8 @@
          db/util/postgresql
          "../utils.rkt")
 
+(provide (all-defined-out))
+
 ;; corresponds to BTMetaPageData in nbtree.h
 (struct btree-meta (magic
                     version
@@ -51,7 +53,7 @@
     ;;
 
     (define (query-stats)
-      (vector->list 
+      (vector->list
        (query-row pgc "SELECT * FROM bt_page_stats($1, $2)" relname blkno)))
 
     (define (text->tid t)
@@ -124,4 +126,4 @@
   (displayln root-items)
   (displayln attr-types))
 
-(test)
+;;(test)
