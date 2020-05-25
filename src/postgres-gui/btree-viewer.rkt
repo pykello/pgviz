@@ -68,7 +68,10 @@
      (+ w xmargin)
      (+ h ymargin)
      #:color "LightGray"))
-  (cc-superimpose frame contents))
+  (define framed
+    (cc-superimpose frame contents))
+  (ct-superimpose (blank (pict-width framed) (+ 20 (pict-height framed)))
+                  framed))
 
 (define (leaf-item-pict item)
   (define xmargin 6)
@@ -77,13 +80,13 @@
   (define v-pict (text v))
   (define w (pict-width v-pict))
   (define h (pict-height v-pict))
-  (define arrow (text "🠓" null 40))
   (define frame
     (filled-rounded-rectangle
      (+ w xmargin)
      (+ h ymargin)
      #:color "white"))
-  (cc-superimpose frame v-pict))
+  (vc-append (cc-superimpose frame v-pict)
+             (pip-arrow-line 0 25 7)))
 
 (define (test)
   (define pgc
