@@ -57,7 +57,7 @@
       [else
        (list (leaf-item-pict (first items))
              (leaf-item-pict (second items))
-             (text "...")
+             (text "⋯")
              (leaf-item-pict (last items)))]))
   (define contents
     (apply hc-append (cons 5 item-picts)))
@@ -67,16 +67,17 @@
     (filled-rectangle
      (+ w xmargin)
      (+ h ymargin)
-     #:color "gray"))
+     #:color "LightGray"))
   (cc-superimpose frame contents))
 
 (define (leaf-item-pict item)
-  (define xmargin 5)
-  (define ymargin 10)
+  (define xmargin 6)
+  (define ymargin 12)
   (define v (car item))
   (define v-pict (text v))
   (define w (pict-width v-pict))
   (define h (pict-height v-pict))
+  (define arrow (text "🠓" null 40))
   (define frame
     (filled-rounded-rectangle
      (+ w xmargin)
@@ -89,7 +90,7 @@
     (postgresql-connect #:user "hadi"
                         #:database "postgres"))
   (define btree (new btree%
-                    [relname "t2_idx"]
+                    [relname "t_idx"]
                     [pgc pgc]))
   (define root (send btree get-root))
   (define root-items (send root get-items))

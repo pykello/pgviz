@@ -103,7 +103,7 @@
       (for/list ([r query-result])
         (define ctid (text->tid (vector-ref r 0)))
         (define data (vector-ref r 1))
-        (define data-text (data->text attr-types data))
+        (define data-text (~a (data->text attr-types data)))
         (match my-type
           ['leaf (cons data-text ctid)]
           [_ (cons data-text (new btree-node%
