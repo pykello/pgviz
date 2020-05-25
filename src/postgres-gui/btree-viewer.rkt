@@ -12,6 +12,11 @@
 (define btree-view%
   (class monitor-handler%
 
+    (init-field [meta `()]
+                [root `()]
+                [visible-levels 3]
+                [max-visible-items 3])
+
     ;;
     ;; event handler
     ;;
@@ -31,3 +36,9 @@
     ;; initialize
     ;;
     (super-new)))
+
+
+
+
+
+
