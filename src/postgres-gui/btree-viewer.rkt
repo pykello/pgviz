@@ -53,6 +53,7 @@
     [(is-a? child btree-node%) (btree-node-pict child)]
     [else (tuple-pointer-pict child)]))
 
+
 (define (btree-node-pict node [max-visible-items 3])
   (define items (send node get-items))
   (define leaf? (eq? (send node get-type) 'leaf))
@@ -60,53 +61,68 @@
     (match (send node has-high-key)
       [#t (values (list (car items)) (cdr items))]
       [#f (values (list) items)]))
-  (define items-to-show
+  (define-values (left-items right-items)
     (cond
-      [(<= (length valid-items) 3) valid-items]
-      [else
-       (list (first valid-items) (second valid-items) "⋯" (last valid-items))]))
-  (define child-spacer-text (if leaf? "⋯" " ⋯⋯ "))
-  (define child-picts
-    (for/list ([item items-to-show])
-      (cond
-        [(string? item) (inset (text child-spacer-text) 0 10)]
-        [else (btree-child-pict (cdr item))])))
-  (define item-picts
-    (for/list ([item items-to-show])
-      (cond
-        [(string? item) (text item)]
-        [else (node-item-pict item)])))
-  (define high-key-pict
-    (map node-item-pict high-key))
-  (define root-pict
-    (frame-items (append high-key-pict item-picts)))
+      [(<= (length valid-items) max-visible-items) (values valid-items `())]
+      [else (values (take valid-items (- max-visible-items 1))
+                    (list (last valid-items)))]))
 
-  (define child-spacing
-    (if leaf? 9 25))
-  (define all-nodes
+  ;; build picts to show in root
+  (define high-key-picts
+    (map node-item-pict high-key))
+  (define left-item-picts
+    (map node-item-pict left-items))
+  (define right-item-picts
+    (map node-item-pict right-items))
+  (define item-spacer-picts
+    (if (null? right-item-picts)
+        `()
+        (list (text "⋯"))))
+  (define item-picts
+    (append high-key-picts
+            left-item-picts
+            item-spacer-picts
+            right-item-picts))
+
+    ;; root
+  (define root-pict
+    (frame-items item-picts))
+
+  ;; build picts to show as children
+  (define left-child-picts
+    (map (compose btree-child-pict cdr) left-items))
+  (define right-child-picts
+    (map (compose btree-child-pict cdr) right-items))
+  (define child-spacer-picts
+    (if (null? right-child-picts)
+        `()
+        (list (inset (text (if leaf? "⋯" " ⋯⋯ ")) 0 10))))
+  (define child-picts
+    (append left-child-picts
+            child-spacer-picts
+            right-child-picts))
+
+  ;; combined pict, without arrows
+  (define child-spacing (if leaf? 9 25))
+  (define combined-pict
     (vc-append 50
                root-pict
                (apply ht-append (cons child-spacing child-picts))))
-  (define with-child-pointers
-    (for/fold ([combined all-nodes])
-              ([item-pict item-picts]
-               [child-pict child-picts]
-               [item items-to-show])
-      (cond
-        [(string? item) (values combined)]
-        [else (values (pin-arrow-line 7 combined
-                                      item-pict cb-find
-                                      child-pict ct-find))])))
-  (define with-sibling-pointers
-    (if leaf?
-        with-child-pointers
-        (for/fold ([combined with-child-pointers])
-                  ([from child-picts]
-                   [to (cdr child-picts)])
-          (values (pin-arrows-line 7 combined
-                                  from rt-find
-                                  to lt-find)))))
-  with-sibling-pointers)
+
+  (define with-child-arrows
+    (add-item2child-arrows combined-pict
+                           (append left-item-picts right-item-picts)
+                           (append left-child-picts right-child-picts)))
+
+  with-child-arrows)
+
+(define (add-item2child-arrows combined item-picts child-picts)
+  (for/fold ([agg combined])
+            ([item-pict item-picts]
+             [child-pict child-picts])
+    (values (pin-arrow-line 7 agg
+                            item-pict cb-find
+                            child-pict ct-find))))
 
 (define (frame-items item-picts)
   (define xmargin 14)
