@@ -51,7 +51,7 @@
 (define (btree-child-pict child)
   (cond
     [(is-a? child btree-node%) (btree-node-pict child)]
-    [else (circle 3)]))
+    [else (tuple-pointer-pict child)]))
 
 (define (btree-node-pict node [max-visible-items 3])
   (define items (send node get-items))
@@ -67,7 +67,7 @@
   (define child-picts
     (for/list ([item items-to-show])
       (cond
-        [(string? item) (text item)]
+        [(string? item) (inset (text " ⋯⋯ ") 0 10)]
         [else (btree-child-pict (cdr item))])))
   (define item-picts
     (for/list ([item items-to-show])
@@ -81,16 +81,28 @@
   (define all-nodes
     (vc-append 50
                root-pict
-               (apply hc-append (cons 20 child-picts))))
-  (for/fold ([combined all-nodes])
-            ([item-pict item-picts]
-             [child-pict child-picts]
-             [item items-to-show])
-    (cond
-      [(string? item) (values combined)]
-      [else (values (pin-arrow-line 7 combined
-                                    item-pict cb-find
-                                    child-pict ct-find))])))
+               (apply ht-append (cons 25 child-picts))))
+  (define with-child-pointers
+    (for/fold ([combined all-nodes])
+              ([item-pict item-picts]
+               [child-pict child-picts]
+               [item items-to-show])
+      (cond
+        [(string? item) (values combined)]
+        [else (values (pin-arrow-line 7 combined
+                                      item-pict cb-find
+                                      child-pict ct-find))])))
+  (define leaf? (eq? (send node get-type) 'leaf))
+  (define with-sibling-pointers
+    (if leaf?
+        with-child-pointers
+        (for/fold ([combined with-child-pointers])
+                  ([from child-picts]
+                   [to (cdr child-picts)])
+          (values (pin-arrows-line 7 combined
+                                  from rt-find
+                                  to lt-find)))))
+  with-sibling-pointers)
 
 (define (frame-items item-picts)
   (define xmargin 14)
@@ -106,10 +118,12 @@
      #:color "LightGray"))
   (cc-superimpose frame contents))
 
-(define (node-item-pict item)
+(define (node-item-pict v)
+  (round-framed-text (car v)))
+
+(define (round-framed-text v)
   (define xmargin 6)
   (define ymargin 12)
-  (define v (car item))
   (define v-pict (text v))
   (define w (pict-width v-pict))
   (define h (pict-height v-pict))
@@ -118,9 +132,13 @@
      (+ w xmargin)
      (+ h ymargin)
      #:color "white"))
-  (cc-superimpose frame v-pict))
-;;  (vc-append (cc-superimpose frame v-pict)
-;;             (pip-arrow-line 0 25 7)))
+  (inset (cc-superimpose frame v-pict) 1))
+
+
+(define (tuple-pointer-pict tid)
+  (define txt
+    (format "~a,~a" (first tid) (second tid)))
+  (round-framed-text txt))
 
 (define (test)
   (define pgc
