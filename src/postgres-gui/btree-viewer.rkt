@@ -55,23 +55,29 @@
 
 (define (btree-node-pict node [max-visible-items 3])
   (define items (send node get-items))
-  (define to-show
+  (define-values (high-key valid-items)
+    (match (send node has-high-key)
+      [#t (values (list (car items)) (cdr items))]
+      [#f (values (list) items)]))
+  (define items-to-show
     (cond
       [(<= (length items) 3) items]
       [else
        (list (first items) (second items) "⋯" (last items))]))
   (define child-picts
-    (for/list ([c to-show])
+    (for/list ([item items-to-show])
       (cond
-        [(string? c) (text c)]
-        [else (btree-child-pict (cdr c))])))
+        [(string? item) (text item)]
+        [else (btree-child-pict (cdr item))])))
   (define item-picts
-    (for/list ([c to-show])
+    (for/list ([item items-to-show])
       (cond
-        [(string? c) (text c)]
-        [else (node-item-pict c)])))
+        [(string? item) (text item)]
+        [else (node-item-pict item)])))
+  (define high-key-pict
+    (map node-item-pict high-key))
   (define root-pict
-    (frame-items item-picts))
+    (frame-items (append high-key-pict item-picts)))
   (define all-nodes
     (vc-append 50
                root-pict
@@ -79,9 +85,9 @@
   (for/fold ([combined all-nodes])
             ([item-pict item-picts]
              [child-pict child-picts]
-             [v to-show])
+             [item items-to-show])
     (cond
-      [(string? v) (values combined)]
+      [(string? item) (values combined)]
       [else (values (pin-arrow-line 7 combined
                                     item-pict cb-find
                                     child-pict ct-find))])))

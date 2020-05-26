@@ -86,6 +86,10 @@
         [#\l 'leaf]
         [#\i 'internal]))
 
+    (define/public (has-high-key)
+      (define btpo_next (ninth (query-stats)))
+      (> btpo_next 0))
+
     (define/public (get-attr-types)
       (define query-result
         (query-rows pgc "SELECT atttypid::int FROM pg_attribute, pg_class
