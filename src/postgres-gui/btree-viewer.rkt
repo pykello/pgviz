@@ -55,19 +55,21 @@
 
 (define (btree-node-pict node [max-visible-items 3])
   (define items (send node get-items))
+  (define leaf? (eq? (send node get-type) 'leaf))
   (define-values (high-key valid-items)
     (match (send node has-high-key)
       [#t (values (list (car items)) (cdr items))]
       [#f (values (list) items)]))
   (define items-to-show
     (cond
-      [(<= (length items) 3) items]
+      [(<= (length valid-items) 3) valid-items]
       [else
-       (list (first items) (second items) "⋯" (last items))]))
+       (list (first valid-items) (second valid-items) "⋯" (last valid-items))]))
+  (define child-spacer-text (if leaf? "⋯" " ⋯⋯ "))
   (define child-picts
     (for/list ([item items-to-show])
       (cond
-        [(string? item) (inset (text " ⋯⋯ ") 0 10)]
+        [(string? item) (inset (text child-spacer-text) 0 10)]
         [else (btree-child-pict (cdr item))])))
   (define item-picts
     (for/list ([item items-to-show])
@@ -78,10 +80,13 @@
     (map node-item-pict high-key))
   (define root-pict
     (frame-items (append high-key-pict item-picts)))
+
+  (define child-spacing
+    (if leaf? 9 25))
   (define all-nodes
     (vc-append 50
                root-pict
-               (apply ht-append (cons 25 child-picts))))
+               (apply ht-append (cons child-spacing child-picts))))
   (define with-child-pointers
     (for/fold ([combined all-nodes])
               ([item-pict item-picts]
@@ -92,7 +97,6 @@
         [else (values (pin-arrow-line 7 combined
                                       item-pict cb-find
                                       child-pict ct-find))])))
-  (define leaf? (eq? (send node get-type) 'leaf))
   (define with-sibling-pointers
     (if leaf?
         with-child-pointers
