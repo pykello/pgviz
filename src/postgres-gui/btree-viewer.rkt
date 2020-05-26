@@ -45,20 +45,50 @@
     ;;
     (super-new)))
 
+(define (btree-internal-pict node [visible-levels 3] [max-visible-items 3])
+  0)
 
-(define (btree-leaf-pict node [max-visible-items 3])
+(define (btree-child-pict child)
+  (cond
+    [(is-a? child btree-node%) (btree-node-pict child)]
+    [else (circle 3)]))
+
+(define (btree-node-pict node [max-visible-items 3])
+  (define items (send node get-items))
+  (define to-show
+    (cond
+      [(<= (length items) 3) items]
+      [else
+       (list (first items) (second items) "⋯" (last items))]))
+  (define child-picts
+    (for/list ([c to-show])
+      (cond
+        [(string? c) (text c)]
+        [else (btree-child-pict (cdr c))])))
+  (define item-picts
+    (for/list ([c to-show])
+      (cond
+        [(string? c) (text c)]
+        [else (node-item-pict c)])))
+  (define root-pict
+    (frame-items item-picts))
+  (define all-nodes
+    (vc-append 50
+               root-pict
+               (apply hc-append (cons 20 child-picts))))
+  (for/fold ([combined all-nodes])
+            ([item-pict item-picts]
+             [child-pict child-picts]
+             [v to-show])
+    (cond
+      [(string? v) (values combined)]
+      [else (values (pin-arrow-line 7 combined
+                                    item-pict cb-find
+                                    child-pict ct-find))])))
+
+(define (frame-items item-picts)
   (define xmargin 14)
   (define ymargin 16)
-  (define items (send node get-items))
-  (define item-picts
-    (cond
-      [(<= (length items) 3)
-       (map leaf-item-pict items)]
-      [else
-       (list (leaf-item-pict (first items))
-             (leaf-item-pict (second items))
-             (text "⋯")
-             (leaf-item-pict (last items)))]))
   (define contents
     (apply hc-append (cons 5 item-picts)))
   (define w (pict-width contents))
@@ -68,12 +98,9 @@
      (+ w xmargin)
      (+ h ymargin)
      #:color "LightGray"))
-  (define framed
-    (cc-superimpose frame contents))
-  (ct-superimpose (blank (pict-width framed) (+ 20 (pict-height framed)))
-                  framed))
+  (cc-superimpose frame contents))
 
-(define (leaf-item-pict item)
+(define (node-item-pict item)
   (define xmargin 6)
   (define ymargin 12)
   (define v (car item))
@@ -85,8 +112,9 @@
      (+ w xmargin)
      (+ h ymargin)
      #:color "white"))
-  (vc-append (cc-superimpose frame v-pict)
-             (pip-arrow-line 0 25 7)))
+  (cc-superimpose frame v-pict))
+;;  (vc-append (cc-superimpose frame v-pict)
+;;             (pip-arrow-line 0 25 7)))
 
 (define (test)
   (define pgc
@@ -98,7 +126,7 @@
   (define root (send btree get-root))
   (define root-items (send root get-items))
   (define attr-types (send root get-attr-types))
-  (btree-leaf-pict root))
+  (btree-node-pict root))
 
 (test)
 
