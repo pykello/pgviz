@@ -32,13 +32,18 @@
       0)
 
     (define/override (paint dc)
-      (send dc draw-text "btree viewer" 10 10))
+      (send dc set-smoothing 'smoothed)
+      (draw-pict root-pict dc 0 0))
+      
 
     (define/override (get-width)
-      500)
+      (exact-round (pict-width root-pict)))
 
     (define/override (get-height)
-      500)
+      (exact-round (pict-height root-pict)))
+
+    (define-values (root-pict assocs)
+        (btree-node-pict (send btree get-root)))
 
     ;;
     ;; initialize
@@ -46,7 +51,7 @@
     (super-new)))
 
 (define (btree-internal-pict node [visible-levels 3] [max-visible-items 3])
-  0)
+  (btree-node-pict node max-visible-items))
 
 ;;
 ;; returns (values pict (list node-assoc))
@@ -232,7 +237,7 @@
   (define-values (p assocs) (btree-node-pict root))
   p)
 
-(test)
+;;(test)
 
 
 

@@ -8,10 +8,18 @@
       (displayln "default left-mouse-click"))
 
     (define/public (get-view)
+      (when (null? bmp)
+        (define new-bmp (make-object bitmap%
+                          (send this get-width)
+                          (send this get-height)))
+        (let ([dc (send new-bmp make-dc)])
+          (send dc clear)
+          (send this paint dc))
+        (set! bmp new-bmp))
       bmp)
 
     (define/public (get-width)
-      1000)
+      3000)
 
     (define/public (get-height)
       500)
@@ -19,10 +27,7 @@
     (define/public (paint dc)
       (send dc draw-text "Make selections to load a view!" 10 10))
 
-    (define bmp (make-object bitmap% 2000 11000))
-    (let ([dc (send bmp make-dc)])
-      (send dc clear)
-      (send this paint dc))
+    (define bmp null)
     
     (super-new)))
 

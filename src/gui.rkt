@@ -32,7 +32,6 @@
     (send postgres-status set-label "Connected!")))
 
 (define (on-load-clicked b e)
-  (displayln (format "on-load-clicked ~a" (send view-type-choice get-selection)))
   (cond
     [(eq? pgc #f) (message-box "Error" "Not connected yet")]
     [else (match (send view-type-choice get-selection)
