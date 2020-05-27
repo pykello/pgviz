@@ -18,6 +18,8 @@
   (new btree-view%
        [btree btree]))
 
+(struct btree-assoc (type value pict))
+
 (define btree-view%
   (class monitor-handler%
 
@@ -29,7 +31,10 @@
     ;; event handler
     ;;
     (define/override (on-left-mouse-click x y)
-      0)
+      (define item (findf (assoc-contains? root-pict x y) assocs))
+      (when (not (eq? #f item))
+        (displayln (btree-assoc-type item))))
+        
 
     (define/override (paint dc)
       (send dc set-smoothing 'aligned)
@@ -49,7 +54,14 @@
     ;;
     (super-new)))
 
-(struct btree-assoc (type value pict))
+(define (assoc-contains? base x y)
+  (λ (assoc)
+    (define p (btree-assoc-pict assoc))
+    (define-values (px py) (lt-find base p))
+    (define w (pict-width p))
+    (define h (pict-height p))
+    (and (<= px x (+ px w))
+         (<= py y (+ py h)))))
 
 (define (btree-pict btree)
   (define metapage-text (inset (text "Metapage") 20 7))
@@ -175,8 +187,8 @@
 
   (define assocs
     (append (list (btree-assoc 'node node root-pict))
-            left-child-root-picts
-            right-child-root-picts))
+            left-child-assocs
+            right-child-assocs))
 
   (values with-sibling-arrows assocs))
 
@@ -269,7 +281,7 @@
                      [relname "tx_idx"]
                      [pgc pgc]))
   (define-values (p assocs) (btree-pict btree))
-  p)
+  assocs)
 
 ;;(test)
 
