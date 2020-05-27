@@ -51,14 +51,19 @@
               (callback)))))
 
     (define/override (paint dc)
-      (set! layout (get-memory-layout))
+      (when (eq? layout #f)
+        (set! layout (get-memory-layout)))
       (draw-layout dc layout)
       (draw-legend dc legend))
 
     (define/override (get-width)
+      (when (eq? layout #f)
+        (set! layout (get-memory-layout)))
       (+ (* 2 hmargin) (* per-row cell-side)))
 
     (define/override (get-height)
+      (when (eq? layout #f)
+        (set! layout (get-memory-layout)))
       (let* ([visible-row-count (length (memory-layout-visible-rows layout))]
              [spacer-count (length (memory-layout-spacers layout))])
         (+ ( * 2 vmargin) (* (+ visible-row-count spacer-count) cell-side))))
