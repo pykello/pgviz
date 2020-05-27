@@ -190,11 +190,14 @@
   (round-framed-text (car v)))
 
 (define (round-framed-text v)
-  (define xmargin 6)
+  (define xmargin 8)
   (define ymargin 12)
-  (define v-pict (text v))
+  (define sz (if (eq? v "-∞")
+                 16
+                 12))
+  (define v-pict (text v null sz))
   (define w (pict-width v-pict))
-  (define h (pict-height v-pict))
+  (define h 16)
   (define frame
     (filled-rounded-rectangle
      (+ w xmargin)
