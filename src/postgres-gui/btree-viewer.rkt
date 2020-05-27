@@ -48,10 +48,13 @@
 (define (btree-internal-pict node [visible-levels 3] [max-visible-items 3])
   0)
 
+;;
+;; returns (values pict (list node-assoc))
+;;
 (define (btree-child-pict child)
   (cond
     [(is-a? child btree-node%) (btree-node-pict child)]
-    [else (tuple-pointer-pict child)]))
+    [else (values (tuple-pointer-pict child) `())]))
 
 
 (define (btree-node-pict node [max-visible-items 3])
@@ -88,11 +91,34 @@
   (define root-pict
     (frame-items item-picts))
 
+  ;;
+  ;; aggregates btree-child-pict results of children as
+  ;; (values root-picts assocs child-picts)
+  ;; child-picts are the complete child subtree. root-picts
+  ;; are pict of those subtrees.
+  ;;
+  (define (agg-children child-items)
+    (for/fold ([roots `()]
+               [assocs `()]
+               [picts `()])
+              ([item child-items])
+      (define ptr (cdr item))
+      (define-values (ptr-pict ptr-assocs)
+        (btree-child-pict ptr))
+      (define ptr-root
+        (if (null? ptr-assocs)
+            `()
+            (list (cdr (first ptr-assocs)))))
+      (values (append roots ptr-root)
+              (append assocs ptr-assocs)
+              (append picts (list ptr-pict)))))
+
   ;; build picts to show as children
-  (define left-child-picts
-    (map (compose btree-child-pict cdr) left-items))
-  (define right-child-picts
-    (map (compose btree-child-pict cdr) right-items))
+  (define-values (left-child-root-picts left-child-assocs left-child-picts)
+    (agg-children left-items))
+  (define-values (right-child-root-picts right-child-assocs right-child-picts)
+    (agg-children right-items))
+
   (define child-spacer-picts
     (if (null? right-child-picts)
         `()
@@ -114,7 +140,17 @@
                            (append left-item-picts right-item-picts)
                            (append left-child-picts right-child-picts)))
 
-  with-child-arrows)
+  (define with-left-sibling-arrows
+    (add-sibling-arrows with-child-arrows left-child-root-picts))
+  (define with-right-sibling-arrows
+    (add-sibling-arrows with-left-sibling-arrows right-child-root-picts))
+
+  (define assocs
+    (append (list (cons node root-pict))
+            left-child-root-picts
+            right-child-root-picts))
+
+  (values with-right-sibling-arrows assocs))
 
 (define (add-item2child-arrows combined item-picts child-picts)
   (for/fold ([agg combined])
@@ -123,6 +159,18 @@
     (values (pin-arrow-line 7 agg
                             item-pict cb-find
                             child-pict ct-find))))
+
+(define (add-sibling-arrows base node-picts)
+  (define to-list
+    (if (null? node-picts)
+        `()
+        (cdr node-picts)))
+  (for/fold ([agg base])
+            ([from node-picts]
+             [to to-list])
+    (values (pin-arrows-line 7 agg
+                             from rc-find
+                             to lc-find))))
 
 (define (frame-items item-picts)
   (define xmargin 14)
@@ -165,12 +213,13 @@
     (postgresql-connect #:user "hadi"
                         #:database "postgres"))
   (define btree (new btree%
-                    [relname "t_idx"]
+                    [relname "tx_idx"]
                     [pgc pgc]))
   (define root (send btree get-root))
   (define root-items (send root get-items))
   (define attr-types (send root get-attr-types))
-  (btree-node-pict root))
+  (define-values (p assocs) (btree-node-pict root))
+  p)
 
 (test)
 

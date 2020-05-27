@@ -63,9 +63,13 @@
 
     (define (data->text type data)
       (define bytes (map (λ(x) (string->number x 16)) (string-split data)))
+      (define bytes-rest
+        (if (null? bytes)
+            `()
+            (cdr bytes)))
       (match type
         [(or `(20) `(21) `(23)) (bytes->num bytes)]
-        [(or `(25)) (bytes->text (cdr bytes))]
+        [(or `(25)) (bytes->text bytes-rest)]
         [_ data]))
 
     (define (bytes->num bs)
