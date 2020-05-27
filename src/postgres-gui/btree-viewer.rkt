@@ -143,10 +143,14 @@
 
   ;; combined pict, without arrows
   (define child-spacing (if leaf? 9 25))
+  (define children-combined (apply ht-append (cons child-spacing child-picts)))
+  (define-values
+    (aligned-child aligned-item)
+    (if (< (length left-child-root-picts) 2)
+        (values children-combined root-pict)
+        (values (second left-child-root-picts) (second left-item-picts))))
   (define combined-pict
-    (vc-append 50
-               root-pict
-               (apply ht-append (cons child-spacing child-picts))))
+    (aligned-v-append 50 root-pict children-combined aligned-item aligned-child))
 
   (define with-child-arrows
     (add-item2child-arrows combined-pict
@@ -224,6 +228,28 @@
     (format "~a,~a" (first tid) (second tid)))
   (round-framed-text txt))
 
+(define (aligned-v-append d p1 p2 p1-align p2-align)
+  (define-values (cx1 cy1) (cc-find p1 p1-align))
+  (define-values (cx2 cy2) (cc-find p2 p2-align))
+  (define p1x (- cx2 cx1))
+  (define p2-adjusted
+    (cond
+      [(>= p1x 0) p2]
+      [else (pad-left p2 (- p1x))]))
+  (define p1-adjusted
+    (cond
+      [(>= p1x 0) (pad-left p1 p1x)]
+      [else p1]))
+  (vl-append d p1-adjusted p2-adjusted))
+
+;;
+;; pads p by some empty space on the left defined by padding
+;;
+(define (pad-left p padding)
+  (rc-superimpose (blank (+ (pict-width p) padding)
+                         (pict-height p))
+                  p))
+
 (define (test)
   (define pgc
     (postgresql-connect #:user "hadi"
@@ -237,7 +263,7 @@
   (define-values (p assocs) (btree-node-pict root))
   p)
 
-;;(test)
+(test)
 
 
 
