@@ -53,6 +53,8 @@
 (define (btree-internal-pict node [visible-levels 3] [max-visible-items 3])
   (btree-node-pict node max-visible-items))
 
+(struct btree-assoc (type value pict))
+
 ;;
 ;; returns (values pict (list node-assoc))
 ;;
@@ -60,8 +62,7 @@
   (cond
     [(is-a? child btree-node%) (btree-node-pict child)]
     [else (define root-pict (tuple-pointer-pict child))
-          (values root-pict (list (cons child root-pict)))]))
-
+          (values root-pict (list (btree-assoc 'tuple-pointer child root-pict)))]))
 
 (define (btree-node-pict node [max-visible-items 3])
   (define items (send node get-items))
@@ -114,7 +115,7 @@
       (define ptr-root
         (if (null? ptr-assocs)
             `()
-            (list (cdr (first ptr-assocs)))))
+            (list (btree-assoc-pict (first ptr-assocs)))))
       (values (append roots ptr-root)
               (append assocs ptr-assocs)
               (append picts (list ptr-pict)))))
@@ -166,7 +167,7 @@
                                                       right-child-root-picts))))
 
   (define assocs
-    (append (list (cons node root-pict))
+    (append (list (btree-assoc 'node node root-pict))
             left-child-root-picts
             right-child-root-picts))
 
