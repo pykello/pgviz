@@ -119,10 +119,18 @@
   (define-values (right-child-root-picts right-child-assocs right-child-picts)
     (agg-children right-items))
 
+  (define child-root-height
+    (if (null? left-child-root-picts)
+        30
+        (pict-height (first left-child-root-picts))))
+
+  (define spacer-text (if leaf? "⋯" " ⋯⋯ "))
+
   (define child-spacer-picts
     (if (null? right-child-picts)
         `()
-        (list (inset (text (if leaf? "⋯" " ⋯⋯ ")) 0 10))))
+        (list (cc-superimpose (blank 50 child-root-height)
+                              (text spacer-text)))))
   (define child-picts
     (append left-child-picts
             child-spacer-picts
@@ -140,17 +148,17 @@
                            (append left-item-picts right-item-picts)
                            (append left-child-picts right-child-picts)))
 
-  (define with-left-sibling-arrows
-    (add-sibling-arrows with-child-arrows left-child-root-picts))
-  (define with-right-sibling-arrows
-    (add-sibling-arrows with-left-sibling-arrows right-child-root-picts))
+  (define with-sibling-arrows
+    (add-sibling-arrows with-child-arrows (append left-child-root-picts
+                                                  child-spacer-picts
+                                                  right-child-root-picts)))
 
   (define assocs
     (append (list (cons node root-pict))
             left-child-root-picts
             right-child-root-picts))
 
-  (values with-right-sibling-arrows assocs))
+  (values with-sibling-arrows assocs))
 
 (define (add-item2child-arrows combined item-picts child-picts)
   (for/fold ([agg combined])
