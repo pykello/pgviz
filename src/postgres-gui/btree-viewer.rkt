@@ -32,10 +32,9 @@
       0)
 
     (define/override (paint dc)
-      (send dc set-smoothing 'smoothed)
+      (send dc set-smoothing 'aligned)
       (draw-pict root-pict dc 0 0))
       
-
     (define/override (get-width)
       (exact-round (pict-width root-pict)))
 
@@ -43,17 +42,25 @@
       (exact-round (pict-height root-pict)))
 
     (define-values (root-pict assocs)
-        (btree-node-pict (send btree get-root)))
+        (btree-pict btree))
 
     ;;
     ;; initialize
     ;;
     (super-new)))
 
-(define (btree-internal-pict node [visible-levels 3] [max-visible-items 3])
-  (btree-node-pict node max-visible-items))
-
 (struct btree-assoc (type value pict))
+
+(define (btree-pict btree)
+  (define metapage-text (inset (text "Metapage") 20 7))
+  (define metapage-pict (frame-items (list metapage-text)))
+  (define-values (subtree-pict assocs)
+    (btree-child-pict (send btree get-root)))
+  (define root-pict (btree-assoc-pict (first assocs)))
+  (define combined (aligned-v-append 30 metapage-pict subtree-pict metapage-pict root-pict))
+  (define with-arrow (add-item2child-arrows combined (list metapage-pict) (list root-pict)))
+  (define padded (inset with-arrow 50))
+  (values padded (cons (btree-assoc 'metapage btree metapage-pict) assocs)))
 
 ;;
 ;; returns (values pict (list node-assoc))
@@ -261,13 +268,10 @@
   (define btree (new btree%
                     [relname "tx_idx"]
                     [pgc pgc]))
-  (define root (send btree get-root))
-  (define root-items (send root get-items))
-  (define attr-types (send root get-attr-types))
-  (define-values (p assocs) (btree-node-pict root))
+  (define-values (p assocs) (btree-pict btree))
   p)
 
-(test)
+;;(test)
 
 
 
