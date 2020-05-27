@@ -90,7 +90,7 @@
         [#\l 'leaf]
         [#\i 'internal]))
 
-    (define/public (has-high-key)
+    (define/public (has-high-key?)
       (define btpo_next (ninth (query-stats)))
       (> btpo_next 0))
 
@@ -104,14 +104,24 @@
 
     (define/public (get-items)
       (define query-result
-        (query-rows pgc "SELECT ctid::text, data
+        (query-rows pgc "SELECT ctid::text, data, itemlen
                          FROM bt_page_items($1, $2)" relname blkno))
       (define my-type (send this get-type))
       (define attr-types (send this get-attr-types))
-      (for/list ([r query-result])
+      (define falses (build-list (length query-result)
+                                 (λ(x) #f)))
+      (define first?-list
+        (if (send this has-high-key?)
+            (cons #f (cons #t falses))
+            (cons #t falses)))
+      (for/list ([r query-result]
+                 [first? first?-list])
         (define ctid (text->tid (vector-ref r 0)))
         (define data (vector-ref r 1))
-        (define data-text (~a (data->text attr-types data)))
+        (define data-text
+          (if (and first? (not (eq? my-type 'leaf)))
+              "-∞"
+              (~a (data->text attr-types data))))
         (match my-type
           ['leaf (cons data-text ctid)]
           [_ (cons data-text (new btree-node%
@@ -126,7 +136,7 @@
     (postgresql-connect #:user "hadi"
                         #:database "postgres"))
   (define btree (new btree%
-                    [relname "t2_idx"]
+                    [relname "t_idx"]
                     [pgc pgc]))
   (define root (send btree get-root))
   (define root-items (send root get-items))

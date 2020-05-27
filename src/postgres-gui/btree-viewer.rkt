@@ -61,7 +61,7 @@
   (define items (send node get-items))
   (define leaf? (eq? (send node get-type) 'leaf))
   (define-values (high-key valid-items)
-    (match (send node has-high-key)
+    (match (send node has-high-key?)
       [#t (values (list (car items)) (cdr items))]
       [#f (values (list) items)]))
   (define-values (left-items right-items)
