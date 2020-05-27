@@ -42,7 +42,7 @@
       (exact-round (pict-height root-pict)))
 
     (define-values (root-pict assocs)
-        (btree-pict btree))
+      (btree-pict btree))
 
     ;;
     ;; initialize
@@ -58,7 +58,7 @@
     (btree-child-pict (send btree get-root)))
   (define root-pict (btree-assoc-pict (first assocs)))
   (define combined (aligned-v-append 30 metapage-pict subtree-pict metapage-pict root-pict))
-  (define with-arrow (add-item2child-arrows combined (list metapage-pict) (list root-pict)))
+  (define with-arrow (add-child-arrows combined (list metapage-pict) (list root-pict)))
   (define padded (inset with-arrow 50))
   (values padded (cons (btree-assoc 'metapage btree metapage-pict) assocs)))
 
@@ -101,7 +101,7 @@
             item-spacer-picts
             right-item-picts))
 
-    ;; root
+  ;; root
   (define root-pict
     (frame-items item-picts))
 
@@ -162,9 +162,9 @@
     (aligned-v-append 50 root-pict children-combined aligned-item aligned-child))
 
   (define with-child-arrows
-    (add-item2child-arrows combined-pict
-                           (append left-item-picts right-item-picts)
-                           (append left-child-root-picts right-child-root-picts)))
+    (add-child-arrows combined-pict
+                      (append left-item-picts right-item-picts)
+                      (append left-child-root-picts right-child-root-picts)))
 
   (define with-sibling-arrows
     (if (eq? (send node get-type) 'leaf)
@@ -180,7 +180,7 @@
 
   (values with-sibling-arrows assocs))
 
-(define (add-item2child-arrows combined item-picts child-picts)
+(define (add-child-arrows combined item-picts child-picts)
   (for/fold ([agg combined])
             ([item-pict item-picts]
              [child-pict child-picts])
@@ -266,8 +266,8 @@
     (postgresql-connect #:user "hadi"
                         #:database "postgres"))
   (define btree (new btree%
-                    [relname "tx_idx"]
-                    [pgc pgc]))
+                     [relname "tx_idx"]
+                     [pgc pgc]))
   (define-values (p assocs) (btree-pict btree))
   p)
 
