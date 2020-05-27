@@ -59,7 +59,8 @@
 (define (btree-child-pict child)
   (cond
     [(is-a? child btree-node%) (btree-node-pict child)]
-    [else (values (tuple-pointer-pict child) `())]))
+    [else (define root-pict (tuple-pointer-pict child))
+          (values root-pict (list (cons child root-pict)))]))
 
 
 (define (btree-node-pict node [max-visible-items 3])
@@ -134,7 +135,7 @@
   (define child-spacer-picts
     (if (null? right-child-picts)
         `()
-        (list (cc-superimpose (blank 50 child-root-height)
+        (list (cc-superimpose (blank 20 child-root-height)
                               (text spacer-text)))))
   (define child-picts
     (append left-child-picts
@@ -142,7 +143,7 @@
             right-child-picts))
 
   ;; combined pict, without arrows
-  (define child-spacing (if leaf? 9 25))
+  (define child-spacing (if leaf? 6 25))
   (define children-combined (apply ht-append (cons child-spacing child-picts)))
   (define-values
     (aligned-child aligned-item)
@@ -155,12 +156,14 @@
   (define with-child-arrows
     (add-item2child-arrows combined-pict
                            (append left-item-picts right-item-picts)
-                           (append left-child-picts right-child-picts)))
+                           (append left-child-root-picts right-child-root-picts)))
 
   (define with-sibling-arrows
-    (add-sibling-arrows with-child-arrows (append left-child-root-picts
-                                                  child-spacer-picts
-                                                  right-child-root-picts)))
+    (if (eq? (send node get-type) 'leaf)
+        with-child-arrows
+        (add-sibling-arrows with-child-arrows (append left-child-root-picts
+                                                      child-spacer-picts
+                                                      right-child-root-picts))))
 
   (define assocs
     (append (list (cons node root-pict))
