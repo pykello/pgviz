@@ -16,7 +16,8 @@
                      [pgc pgc]))
                      
   (new btree-view%
-       [btree btree]))
+       [btree btree]
+       [set-attrs set-attrs]))
 
 (struct btree-assoc (type value pict))
 
@@ -24,6 +25,7 @@
   (class monitor-handler%
 
     (init-field btree
+                set-attrs
                 [visible-levels 3]
                 [max-visible-items 3])
 
@@ -33,8 +35,10 @@
     (define/override (on-left-mouse-click x y)
       (define item (findf (assoc-contains? root-pict x y) assocs))
       (when (not (eq? #f item))
-        (displayln (btree-assoc-type item))))
-        
+        (match (btree-assoc-type item)
+          ['metapage (on-click-metapage)]
+          ['node (on-click-node (btree-assoc-value item))]
+          ['tuple-pointer (on-click-tuple-pointer (btree-assoc-value item))])))
 
     (define/override (paint dc)
       (send dc set-smoothing 'aligned)
@@ -48,6 +52,23 @@
 
     (define-values (root-pict assocs)
       (btree-pict btree))
+
+    (define (on-click-metapage)
+      (define metap (send btree get-meta-page))
+      (set-attrs `(["Type" "Metapage"]
+                   ["magic" ,(hex-format (btree-meta-magic metap) 8)]
+                   ["version" ,(btree-meta-version metap)]
+                   ["root" ,(btree-meta-root metap)]
+                   ["fastroot" ,(btree-meta-fastroot metap)]
+                   ["fastlevel" ,(btree-meta-fastlevel metap)]
+                   ["oldest_xact" ,(btree-meta-oldest_xact metap)]
+                   ["last_cleanup_num_tuples" ,(exact-round (btree-meta-last_cleanup_num_tuples metap))])))
+
+    (define (on-click-node node)
+      0)
+
+    (define (on-click-tuple-pointer tid)
+      0)
 
     ;;
     ;; initialize
