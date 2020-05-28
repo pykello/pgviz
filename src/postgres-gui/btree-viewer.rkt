@@ -68,7 +68,8 @@
       0)
 
     (define (on-click-tuple-pointer tid)
-      0)
+      (set-attrs `(["Type" "Tuple Pointer"]
+                   ["tuple tid" ,tid])))
 
     ;;
     ;; initialize
