@@ -100,12 +100,21 @@
 (define (btree-pict btree)
   (define metapage-text (inset (text "Metapage") 20 7))
   (define metapage-pict (frame-items (list metapage-text)))
-  (define-values (subtree-pict assocs)
-    (btree-child-pict (send btree get-root)))
-  (define root-pict (btree-assoc-pict (first assocs)))
-  (define combined (aligned-v-append 30 metapage-pict subtree-pict metapage-pict root-pict))
-  (define with-arrow (add-child-arrows combined (list metapage-pict) (list root-pict)))
-  (define padded (inset with-arrow 50))
+  (define metadata (send btree get-meta-page))
+  (define root-blkno (btree-meta-root metadata))
+  (define-values (maybe-with-subtree assocs)
+    (cond
+      ;; btree doesn't have any items
+      [(eq? root-blkno 0) (values metapage-pict `())]
+      ;; btree has at least one item
+      [else (define root (send btree get-root))
+            (define-values (subtree-pict assocs)
+              (btree-child-pict root))
+            (define root-pict (btree-assoc-pict (first assocs)))
+            (define combined (aligned-v-append 30 metapage-pict subtree-pict metapage-pict root-pict))
+            (define with-subtree (add-child-arrows combined (list metapage-pict) (list root-pict)))
+            (values with-subtree assocs)]))
+  (define padded (inset maybe-with-subtree 50))
   (values padded (cons (btree-assoc 'metapage btree metapage-pict) assocs)))
 
 ;;
@@ -312,10 +321,10 @@
     (postgresql-connect #:user "hadi"
                         #:database "postgres"))
   (define btree (new btree%
-                     [relname "tx_idx"]
+                     [relname "t_idx"]
                      [pgc pgc]))
   (define-values (p assocs) (btree-pict btree))
-  assocs)
+  p)
 
 ;;(test)
 
