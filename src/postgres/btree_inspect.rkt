@@ -16,6 +16,18 @@
                     oldest_xact
                     last_cleanup_num_tuples))
 
+(struct btree-page-stats (blkno
+                          type
+                          live_items
+                          dead_items
+                          avg_item_size
+                          page_size
+                          free_size
+                          btpo_prev
+                          btpo_next
+                          btpo
+                          btpo_flags))
+
 (define btree%
   (class object%
     (init-field relname
@@ -52,9 +64,15 @@
     ;; public methods 
     ;;
 
-    (define (query-stats)
-      (vector->list
-       (query-row pgc "SELECT * FROM bt_page_stats($1, $2)" relname blkno)))
+    (define/public (get-page-stats)
+      (define result
+        (vector->list
+         (query-row pgc "SELECT * FROM bt_page_stats($1, $2)" relname blkno)))
+      (define sanitized
+        (cons (first result)
+              (cons (char->type (second result))
+                    (cddr result))))
+      (apply btree-page-stats sanitized))
 
     (define (text->tid t)
       (define tokens
@@ -84,14 +102,17 @@
         [(string-append (string (integer->char (first bs)))
                         (bytes->text (cdr bs)))]))
 
-    (define/public (get-type)
-      (match (second (query-stats))
+    (define (char->type c)
+      (match c
         [#\r 'root]
         [#\l 'leaf]
         [#\i 'internal]))
 
+    (define/public (get-type)
+      (btree-page-stats-type (send this get-page-stats)))
+
     (define/public (has-high-key?)
-      (define btpo_next (ninth (query-stats)))
+      (define btpo_next (btree-page-stats-btpo_next (send this get-page-stats)))
       (> btpo_next 0))
 
     (define/public (get-attr-types)

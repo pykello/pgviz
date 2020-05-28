@@ -65,7 +65,19 @@
                    ["last_cleanup_num_tuples" ,(exact-round (btree-meta-last_cleanup_num_tuples metap))])))
 
     (define (on-click-node node)
-      0)
+      (define stats (send node get-page-stats))
+      (set-attrs `(["Type" "B-Tree node"]
+                   ["blkno" ,(btree-page-stats-blkno stats)]
+                   ["type" ,(btree-page-stats-type stats)]
+                   ["live_items" ,(btree-page-stats-live_items stats)]
+                   ["dead_items" ,(btree-page-stats-dead_items stats)]
+                   ["avg_item_size" ,(btree-page-stats-avg_item_size stats)]
+                   ["page_size" ,(btree-page-stats-page_size stats)]
+                   ["free_size" ,(btree-page-stats-free_size stats)]
+                   ["btpo_prev" ,(btree-page-stats-btpo_prev stats)]
+                   ["btpo_next" ,(btree-page-stats-btpo_next stats)]
+                   ["btpo" ,(btree-page-stats-btpo stats)]
+                   ["btpo_flags" ,(btree-page-stats-btpo_flags stats)])))
 
     (define (on-click-tuple-pointer tid)
       (set-attrs `(["Type" "Tuple Pointer"]
