@@ -107,15 +107,23 @@
       ;; btree doesn't have any items
       [(eq? root-blkno 0) (values metapage-pict `())]
       ;; btree has at least one item
-      [else (define root (send btree get-root))
-            (define-values (subtree-pict assocs)
-              (btree-child-pict root))
-            (define root-pict (btree-assoc-pict (first assocs)))
-            (define combined (aligned-v-append 30 metapage-pict subtree-pict metapage-pict root-pict))
-            (define with-subtree (add-child-arrows combined (list metapage-pict) (list root-pict)))
-            (values with-subtree assocs)]))
+      [else (non-empty-btree-pict btree metapage-pict)]))
   (define padded (inset maybe-with-subtree 50))
   (values padded (cons (btree-assoc 'metapage btree metapage-pict) assocs)))
+
+;;
+;; generate a btree which has at least one item
+;; returns (values pict assocs)
+;;
+(define (non-empty-btree-pict btree metapage-pict)
+  (define root (send btree get-root))
+  (define-values (subtree-pict assocs)
+    (btree-child-pict root))
+  (define root-pict (btree-assoc-pict (first assocs)))
+  (define combined (aligned-v-append 30 metapage-pict subtree-pict metapage-pict root-pict))
+  (define with-subtree (add-child-arrows combined (list metapage-pict) (list root-pict)))
+  (values with-subtree assocs))
+
 
 ;;
 ;; returns (values pict (list node-assoc))
