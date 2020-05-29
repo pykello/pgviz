@@ -5,7 +5,10 @@
 (define monitor-handler%
   (class object%
     (define/public (on-left-mouse-click x y)
-      (displayln "default left-mouse-click"))
+      0)
+
+    (define/public (on-right-mouse-click x y)
+      0)
 
     (define/public (get-view)
       (when (null? bmp)
@@ -43,12 +46,16 @@
       (send this init-auto-scrollbars width height 0 0))
 
     (define/override (on-event event)
-      (when (and (send event button-changed? 'left)
-                 (send event button-down? 'left))
-        (define-values (xs ys) (send this get-view-start))
-        (let* ([x (send event get-x)]
-               [y (send event get-y)])
-          (send handler on-left-mouse-click (+ xs x) (+ ys y)))))
+      (define (button-click? which)
+        (and (send event button-changed? which)
+             (send event button-down? which)))
+      (define-values (xs ys) (send this get-view-start))
+      (let* ([x (send event get-x)]
+             [y (send event get-y)])
+        (when (button-click? 'left)
+          (send handler on-left-mouse-click (+ xs x) (+ ys y)))
+        (when (button-click? 'right)
+          (send handler on-right-mouse-click (+ xs x) (+ ys y)))))
 
     (define/override (on-paint)
       (define bmp (send handler get-view))
