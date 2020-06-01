@@ -5,7 +5,8 @@
          "gui-components/monitor.rkt"
          "utils.rkt"
          "postgres-gui/heap-viewer.rkt"
-         "postgres-gui/btree-viewer.rkt")
+         "postgres-gui/btree-viewer.rkt"
+         "gui-components/doc-tabs.rkt")
 
 (define pgc #f)
 
@@ -207,6 +208,11 @@
        [stretchable-width #f]
        [min-width 100]
        [callback on-load-clicked]))
+
+;;(define tabs
+;;  (new doc-tabs%
+;;       [parent window]
+;;       [choices '("1: gui.rkt" "2: doc-tabs.rkt")]))
 
 (define monitor-pane
   (new horizontal-pane%
