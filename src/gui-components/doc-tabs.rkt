@@ -11,7 +11,14 @@
     (super-new [parent parent]
                [alignment '(left center)]
                [stretchable-height #f]
-               [spacing 5])
+               [spacing 5]
+               [vert-margin 5])
+
+    (new vertical-panel%
+         [parent this]
+         [stretchable-width #f]
+         [stretchable-height #f]
+         [min-width 5])
 
     (define items
       (for/list ([choice choices])
@@ -31,7 +38,9 @@
     (super-new [parent parent]
                [stretchable-height #f]
                [stretchable-width #f]
-               [alignment '(left center)])
+               [alignment '(left center)]
+               [vert-margin 0]
+               [horiz-margin 5])
 
     (define label-panel
       (new horizontal-panel%

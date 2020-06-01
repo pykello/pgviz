@@ -209,10 +209,10 @@
        [min-width 100]
        [callback on-load-clicked]))
 
-;;(define tabs
-;;  (new doc-tabs%
-;;       [parent window]
-;;       [choices '("1: gui.rkt" "2: doc-tabs.rkt")]))
+(define tabs
+  (new doc-tabs%
+       [parent window]
+       [choices '("1: gui.rkt" "2: doc-tabs.rkt")]))
 
 (define monitor-pane
   (new horizontal-pane%
