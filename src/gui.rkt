@@ -50,7 +50,8 @@
         (new monitor%
              [parent window]
              [handler (heap-page-view pgc rel "main" idx set-attrs)]))
-      (set-current-tab "Heap Page" new-contents))))
+      (define title (format "Heap Page: ~a/~a" rel idx))
+      (set-current-tab title new-contents))))
 
 (define (load-btree-index)
   (let* ([name (send btree-name get-value)])
@@ -60,7 +61,8 @@
         (new monitor%
              [parent window]
              [handler (btree-view pgc name set-attrs)]))
-      (set-current-tab "B-Tree Index" new-contents))))
+      (define title (format "B-Tree Index: ~a" name))
+      (set-current-tab title new-contents))))
 
 (define (show-postgres-error e)
   (define info (make-hash (exn:fail:sql-info e)))
