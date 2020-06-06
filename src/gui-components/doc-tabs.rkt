@@ -109,7 +109,7 @@
         (on-new-tab-clicked #f #f))
       (on-close-tab idx)
       (set-active-item new-choice)
-      (on-change-item idx))
+      (on-change-item new-choice))
 
     (define (on-new-tab-clicked self evt)
       (define idx (add-item "New Tab"))
