@@ -2,13 +2,15 @@
 
 (provide (all-defined-out))
 
+(require racket/format
+         "../utils.rkt")
+
 (define multi-document-panel%
   (class vertical-panel%
     (init-field parent)
     (super-new [parent parent])
 
     ;; public functions
-    (define counter 0)
     (define/public (set-current-item title content)
       (send doc-tabs set-current-tab title)
       (set! contents (list-set contents current-choice content))
@@ -17,7 +19,7 @@
     ;; event handlers
     (define (on-new-tab idx)
       (set! current-choice idx)
-      (define label "Empty")
+      (define label "New Tab")
       (set! contents (append contents (list (placeholder))))
       (set! choices (append choices (list label))))
 
@@ -28,20 +30,24 @@
       (send container change-children (λ(a) (list)))
       (send container add-child content))
 
+    (define (on-close-tab idx)
+      (set! contents (delete-at contents idx))
+      (set! choices (delete-at choices idx)))
+
     (define (placeholder)
-      (set! counter (+ 1 counter))
       (new message%
            [parent container]
-           [label (format "Nothing to show ~a" counter)]))
+           [label "Nothing to show"]))
 
-    (define choices `("Empty"))
+    (define choices `("New Tab"))
 
     ;; gui
     (define doc-tabs (new doc-tabs%
                           [parent this]
                           [choices choices]
                           [on-new-tab on-new-tab]
-                          [on-change-item on-change-item]))
+                          [on-change-item on-change-item]
+                          [on-close-tab on-close-tab]))
     (define container (new vertical-panel%
                            [parent this]))
 
@@ -56,7 +62,8 @@
                 choices
                 [active-item 0]
                 [on-change-item (λ(idx) (displayln (format "clicked ~a" idx)))]
-                [on-new-tab (λ(idx) ("N"))])
+                [on-new-tab (λ(idx) (displayln "default new tab"))]
+                [on-close-tab (λ(idx) (displayln (format "closed ~a" idx)))])
 
     (super-new [parent parent]
                [alignment '(left center)]
@@ -70,7 +77,8 @@
         (new doc-tab-item%
              [parent item-container]
              [is-active? #f]
-             [on-click (λ() (on-click-item idx))]
+             [on-click (λ() (on-click-item item))]
+             [on-close (λ() (on-close-item item))]
              [label choice]))
       (set! items (append items (list item)))
       (set-active-item idx)
@@ -82,8 +90,25 @@
         (send item set-active (eq? i idx)))
       (set! active-item idx))
 
-    (define (on-click-item idx)
+    (define (on-click-item item)
+      (define idx (index-of items item))
       (set-active-item idx)
+      (on-change-item idx))
+
+    (define (on-close-item item-to-close)
+      (define idx (index-of items item-to-close))
+      (define new-choice
+        (cond
+          [(not (eq? idx active-item)) active-item]
+          [(< (+ 1 active-item) (length items)) active-item]
+          [(> (length items) 1) (- active-item 1)]
+          [else 0]))
+      (send item-container delete-child item-to-close)
+      (set! items (delete-at items idx))
+      (when (null? items)
+        (on-new-tab-clicked #f #f))
+      (on-close-tab idx)
+      (set-active-item new-choice)
       (on-change-item idx))
 
     (define (on-new-tab-clicked self evt)

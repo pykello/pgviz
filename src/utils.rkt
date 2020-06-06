@@ -25,3 +25,21 @@
 (define (compose f g)
   (λ (v)
     (f (g v))))
+
+(define (delete-at lst idx)
+  (cond
+    [(>= idx (length lst)) lst]
+    [else (append (take lst idx)
+                  (drop lst (+ 1 idx)))]))
+
+(define (index-of lst item)
+  (define indexes
+    (flatten
+     (for/list ([s lst]
+                [idx (in-range 0 (length lst))])
+       (if (eq? item s)
+           (list idx)
+           (list)))))
+  (if (null? indexes)
+      #f
+      (first indexes)))
