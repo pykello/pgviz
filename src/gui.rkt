@@ -46,13 +46,21 @@
          [idx (string->number idx-str)])
     (with-handlers
         ([exn:fail:sql? show-postgres-error])
-      (set-monitor-handler (heap-page-view pgc rel "main" idx set-attrs)))))
+      (define new-contents
+        (new monitor%
+             [parent window]
+             [handler (heap-page-view pgc rel "main" idx set-attrs)]))
+      (set-current-tab "Heap Page" new-contents))))
 
 (define (load-btree-index)
   (let* ([name (send btree-name get-value)])
     (with-handlers
         ([exn:fail:sql? show-postgres-error])
-      (set-monitor-handler (btree-view pgc name set-attrs)))))
+      (define new-contents
+        (new monitor%
+             [parent window]
+             [handler (btree-view pgc name set-attrs)]))
+      (set-current-tab "B-Tree Index" new-contents))))
 
 (define (show-postgres-error e)
   (define info (make-hash (exn:fail:sql-info e)))
@@ -72,8 +80,8 @@
   (define values (map (compose ~a second) attrs))
   (send list-box set names values))
 
-(define (set-monitor-handler handler)
-  (send monitor set-handler handler))
+(define (set-current-tab title contents)
+  (send multidoc set-current-item title contents))
 
 (define (on-view-type-changed view-type-choice event)
   (define panels (list heap-view-panel btree-view-panel))
@@ -209,19 +217,14 @@
        [min-width 100]
        [callback on-load-clicked]))
 
-(define tabs
-  (new doc-tabs%
-       [parent window]
-       [choices '("1: gui.rkt" "2: doc-tabs.rkt")]))
-
 (define monitor-pane
   (new horizontal-pane%
        [parent window]
        [horiz-margin 5]
        [spacing 5]))
 
-(define monitor
-  (new monitor%
+(define multidoc
+  (new multi-document-panel%
        [parent monitor-pane]))
 
 (define list-box-container

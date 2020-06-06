@@ -2,6 +2,34 @@
 
 (provide (all-defined-out))
 
+(define multi-document-panel%
+  (class vertical-panel%
+    (init-field parent)
+    (super-new [parent parent])
+
+    (define choices `("Empty"))
+
+    ;; gui
+    (define doc-tabs (new doc-tabs%
+                          [parent this]
+                          [choices choices]))
+    (define container (new vertical-panel%
+                           [parent this]))
+
+    ;; state
+    (define contents (vector (new message%
+                                [parent container]
+                                [label "Nothing to show"])))
+    (define current-choice 0)
+
+    ;; public functions
+    (define/public (set-current-item title content)
+      (send doc-tabs set-current-tab title)
+      (define current-content (vector-ref contents current-choice))
+      (send container delete-child current-content)
+      (vector-set! contents current-choice content)
+      (send content reparent container))))
+
 (define doc-tabs%
   (class horizontal-panel%
 
@@ -30,11 +58,19 @@
              [on-click (λ() (on-click-item i))]
              [label choice])))
 
+    (new button%
+         [parent this]
+         [label "New Tab"])
+
     (define (on-click-item idx)
       (for ([item items]
             [i (in-range 0 100)])
         (send item set-active (eq? i idx)))
       (callback idx))
+
+    (define/public (set-current-tab label)
+      (define current-item (list-ref items active-item))
+      (send current-item set-label label))
     ))
 
 (define doc-tab-item%
@@ -58,6 +94,9 @@
       (send underline set-active is-active?)
       (send this refresh))
 
+    (define/override (set-label label)
+      (send message set-label label))
+
     (define label-panel
       (new horizontal-panel%
            [parent this]
@@ -67,7 +106,8 @@
          [parent label-panel]
          [label label]
          [vert-margin 7]
-         [horiz-margin 5]))
+         [horiz-margin 5]
+         [auto-resize #t]))
     (define close
       (new doc-tab-item-close%
            [parent label-panel]

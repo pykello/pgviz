@@ -37,12 +37,15 @@
 (define monitor%
   (class canvas%
     (inherit get-dc get-width get-height refresh-now)
-    (define handler (new monitor-handler%))
 
-    (define/public (set-handler new-handler)
-      (set! handler new-handler)
-      (define width (send handler get-width))
-      (define height (send handler get-height))
+    (init-field parent
+                handler)
+
+    (super-new [parent parent]
+               [style `(hscroll vscroll)])
+
+    (let ([width (send handler get-width)]
+          [height (send handler get-height)])
       (send this init-auto-scrollbars width height 0 0))
 
     (define/override (on-event event)
@@ -60,6 +63,4 @@
     (define/override (on-paint)
       (define bmp (send handler get-view))
       (define dc (get-dc))
-      (send dc draw-bitmap bmp 0 0))
-
-    (super-new [style `(hscroll vscroll)])))
+      (send dc draw-bitmap bmp 0 0))))
