@@ -96,18 +96,16 @@
       (on-change-item idx))
 
     (define (on-close-item item-to-close)
-      (define idx (index-of items item-to-close))
+      (define item-to-close-idx (index-of items item-to-close))
       (define new-choice
         (cond
-          [(not (eq? idx active-item)) active-item]
-          [(< (+ 1 active-item) (length items)) active-item]
-          [(> (length items) 1) (- active-item 1)]
-          [else 0]))
+          [(>= item-to-close-idx active-item) active-item]
+          [else (- active-item 1)]))
       (send item-container delete-child item-to-close)
-      (set! items (delete-at items idx))
+      (set! items (delete-at items item-to-close-idx))
       (when (null? items)
         (on-new-tab-clicked #f #f))
-      (on-close-tab idx)
+      (on-close-tab item-to-close-idx)
       (set-active-item new-choice)
       (on-change-item new-choice))
 
