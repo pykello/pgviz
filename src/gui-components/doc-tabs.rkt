@@ -7,28 +7,47 @@
     (init-field parent)
     (super-new [parent parent])
 
+    ;; public functions
+    (define counter 0)
+    (define/public (set-current-item title content)
+      (send doc-tabs set-current-tab title)
+      (set! contents (list-set contents current-choice content))
+      (on-change-item current-choice))
+
+    ;; event handlers
+    (define (on-new-tab idx)
+      (set! current-choice idx)
+      (define label "Empty")
+      (set! contents (append contents (list (placeholder))))
+      (set! choices (append choices (list label))))
+
+    (define (on-change-item idx)
+      (set! current-choice idx)
+      (define content (list-ref contents idx))
+      (send content reparent container)
+      (send container change-children (λ(a) (list)))
+      (send container add-child content))
+
+    (define (placeholder)
+      (set! counter (+ 1 counter))
+      (new message%
+           [parent container]
+           [label (format "Nothing to show ~a" counter)]))
+
     (define choices `("Empty"))
 
     ;; gui
     (define doc-tabs (new doc-tabs%
                           [parent this]
-                          [choices choices]))
+                          [choices choices]
+                          [on-new-tab on-new-tab]
+                          [on-change-item on-change-item]))
     (define container (new vertical-panel%
                            [parent this]))
 
     ;; state
-    (define contents (vector (new message%
-                                [parent container]
-                                [label "Nothing to show"])))
-    (define current-choice 0)
-
-    ;; public functions
-    (define/public (set-current-item title content)
-      (send doc-tabs set-current-tab title)
-      (define current-content (vector-ref contents current-choice))
-      (send container delete-child current-content)
-      (vector-set! contents current-choice content)
-      (send content reparent container))))
+    (define contents (list (placeholder)))
+    (define current-choice 0)))
 
 (define doc-tabs%
   (class horizontal-panel%
@@ -36,41 +55,61 @@
     (init-field parent
                 choices
                 [active-item 0]
-                [callback (λ(idx) (displayln (format "clicked ~a" idx)))])
+                [on-change-item (λ(idx) (displayln (format "clicked ~a" idx)))]
+                [on-new-tab (λ(idx) ("N"))])
+
     (super-new [parent parent]
                [alignment '(left center)]
                [stretchable-height #f]
                [spacing 5]
                [vert-margin 5])
 
-    (new vertical-panel%
-         [parent this]
-         [stretchable-width #f]
-         [stretchable-height #f]
-         [min-width 5])
-
-    (define items
-      (for/list ([choice choices]
-                 [i (in-range 0 100)])
+    (define (add-item choice)
+      (define idx (length items))
+      (define item
         (new doc-tab-item%
-             [parent this]
-             [is-active? (eq? i active-item)]
-             [on-click (λ() (on-click-item i))]
-             [label choice])))
+             [parent item-container]
+             [is-active? #f]
+             [on-click (λ() (on-click-item idx))]
+             [label choice]))
+      (set! items (append items (list item)))
+      (set-active-item idx)
+      idx)
 
-    (new button%
-         [parent this]
-         [label "New Tab"])
-
-    (define (on-click-item idx)
+    (define (set-active-item idx)
       (for ([item items]
             [i (in-range 0 100)])
         (send item set-active (eq? i idx)))
-      (callback idx))
+      (set! active-item idx))
+
+    (define (on-click-item idx)
+      (set-active-item idx)
+      (on-change-item idx))
+
+    (define (on-new-tab-clicked self evt)
+      (define idx (add-item "New Tab"))
+      (on-new-tab idx)
+      (on-change-item idx))
 
     (define/public (set-current-tab label)
       (define current-item (list-ref items active-item))
       (send current-item set-label label))
+
+    (define item-container
+      (new horizontal-panel%
+         [parent this]
+         [stretchable-width #f]
+         [stretchable-height #f]
+         [min-width 5]))
+
+    (new button%
+         [parent this]
+         [label "New Tab"]
+         [callback on-new-tab-clicked])
+
+    (define items `())
+    (for ([choice choices])
+      (add-item choice))
     ))
 
 (define doc-tab-item%
