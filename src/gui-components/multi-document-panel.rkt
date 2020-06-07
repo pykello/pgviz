@@ -5,6 +5,10 @@
 (require racket/format
          "../utils.rkt")
 
+;;
+;; tab bar + contents container. Each tab is associated with a content.
+;; To set title and current of current tab, users can use set-current-item.
+;;
 (define multi-document-panel%
   (class vertical-panel%
     (init-field parent)
@@ -12,9 +16,9 @@
 
     ;; public functions
     (define/public (set-current-item title content)
-      (send doc-tabs set-current-tab title)
+      (send tab-bar set-current-tab title)
       (set! contents (list-set contents current-choice content))
-      (on-change-item current-choice))
+      (on-change-tab current-choice))
 
     ;; event handlers
     (define (on-new-tab idx)
@@ -23,7 +27,7 @@
       (set! contents (append contents (list (placeholder))))
       (set! choices (append choices (list label))))
 
-    (define (on-change-item idx)
+    (define (on-change-tab idx)
       (set! current-choice idx)
       (define content (list-ref contents idx))
       (send content reparent container)
@@ -42,11 +46,11 @@
     (define choices `("New Tab"))
 
     ;; gui
-    (define doc-tabs (new doc-tabs%
+    (define tab-bar (new tab-bar%
                           [parent this]
                           [choices choices]
                           [on-new-tab on-new-tab]
-                          [on-change-item on-change-item]
+                          [on-change-tab on-change-tab]
                           [on-close-tab on-close-tab]))
     (define container (new vertical-panel%
                            [parent this]))
@@ -55,31 +59,56 @@
     (define contents (list (placeholder)))
     (define current-choice 0)))
 
-(define doc-tabs%
+;;
+;; contains multiple tabs + "New Tab" button.
+;;
+(define tab-bar%
   (class horizontal-panel%
 
     (init-field parent
                 choices
                 [active-item 0]
-                [on-change-item (λ(idx) (displayln (format "clicked ~a" idx)))]
+                [on-change-tab (λ(idx) (displayln (format "clicked ~a" idx)))]
                 [on-new-tab (λ(idx) (displayln "default new tab"))]
                 [on-close-tab (λ(idx) (displayln (format "closed ~a" idx)))])
 
+    ;; public methods
+    (define/public (set-current-tab label)
+      (define current-item (list-ref items active-item))
+      (send current-item set-label label))
+
+    ;; construct parent
     (super-new [parent parent]
                [alignment '(left center)]
                [stretchable-height #f]
                [spacing 5]
                [vert-margin 5])
 
-    (define (add-item choice)
+    ;;
+    ;; state
+    ;;
+    (define items `())
+
+    ;;
+    ;; initialize
+    ;;
+    (define (initialize)
+      (for ([choice choices])
+        (add-tab choice)))
+
+    ;;
+    ;; private functions
+    ;;
+    
+    (define (add-tab label)
       (define idx (length items))
       (define item
-        (new doc-tab-item%
+        (new tab-item%
              [parent item-container]
              [is-active? #f]
              [on-click (λ() (on-click-item item))]
              [on-close (λ() (on-close-item item))]
-             [label choice]))
+             [label label]))
       (set! items (append items (list item)))
       (set-active-item idx)
       idx)
@@ -93,31 +122,32 @@
     (define (on-click-item item)
       (define idx (index-of items item))
       (set-active-item idx)
-      (on-change-item idx))
+      (on-change-tab idx))
 
     (define (on-close-item item-to-close)
       (define item-to-close-idx (index-of items item-to-close))
-      (define new-choice
+      (define updated-tab-count
+        (max 1 (- (length items) 1)))
+      (define updated-active-idx
         (cond
-          [(>= item-to-close-idx active-item) active-item]
+          [(>= item-to-close-idx active-item) (min active-item (- updated-tab-count 1))]
           [else (- active-item 1)]))
       (send item-container delete-child item-to-close)
       (set! items (delete-at items item-to-close-idx))
       (when (null? items)
         (on-new-tab-clicked #f #f))
       (on-close-tab item-to-close-idx)
-      (set-active-item new-choice)
-      (on-change-item new-choice))
+      (set-active-item updated-active-idx)
+      (on-change-tab updated-active-idx))
 
     (define (on-new-tab-clicked self evt)
-      (define idx (add-item "New Tab"))
+      (define idx (add-tab "New Tab"))
       (on-new-tab idx)
-      (on-change-item idx))
+      (on-change-tab idx))
 
-    (define/public (set-current-tab label)
-      (define current-item (list-ref items active-item))
-      (send current-item set-label label))
-
+    ;;
+    ;; gui
+    ;;
     (define item-container
       (new horizontal-panel%
          [parent this]
@@ -130,12 +160,12 @@
          [label "New Tab"]
          [callback on-new-tab-clicked])
 
-    (define items `())
-    (for ([choice choices])
-      (add-item choice))
-    ))
+    (initialize)))
 
-(define doc-tab-item%
+;;
+;; Single tab item
+;;
+(define tab-item%
   (class vertical-panel%
 
     (init-field parent
@@ -151,6 +181,9 @@
                [vert-margin 0]
                [horiz-margin 5])
 
+    ;;
+    ;; public methods
+    ;;
     (define/public (set-active active?)
       (set! is-active? active?)
       (send underline set-active is-active?)
@@ -159,6 +192,9 @@
     (define/override (set-label label)
       (send message set-label label))
 
+    ;;
+    ;; gui
+    ;;
     (define label-panel
       (new horizontal-panel%
            [parent this]
@@ -171,14 +207,17 @@
          [horiz-margin 5]
          [auto-resize #t]))
     (define close
-      (new doc-tab-item-close%
+      (new tab-item-close%
            [parent label-panel]
            [on-click on-close]))
     (define underline
-      (new doc-tab-item-underline%
+      (new tab-item-underline%
            [parent this]
            [is-active? is-active?]))
 
+    ;;
+    ;; handle mouse events
+    ;;
     (define/override (on-subwindow-event receiver event)
       (define label-or-close
         (or (eq? receiver label-panel) (eq? receiver close)))
@@ -191,7 +230,10 @@
             (on-click)]
            [else #f]))))
 
-(define doc-tab-item-underline%
+;;
+;; underline decoration for a single tab item
+;;
+(define tab-item-underline%
   (class canvas%
     (inherit get-dc)
     (init-field parent
@@ -222,7 +264,10 @@
       (when draw?
         (send dc draw-rectangle 0 0 500 10)))))
 
-(define doc-tab-item-close%
+;;
+;; close button on a tab item
+;;
+(define tab-item-close%
   (class horizontal-panel%
     (init-field parent
                 [on-click (λ() 0)])

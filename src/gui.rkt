@@ -6,7 +6,7 @@
          "utils.rkt"
          "postgres-gui/heap-viewer.rkt"
          "postgres-gui/btree-viewer.rkt"
-         "gui-components/doc-tabs.rkt")
+         "gui-components/multi-document-panel.rkt")
 
 (define pgc #f)
 
