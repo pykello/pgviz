@@ -12,6 +12,7 @@
 (define multi-document-panel%
   (class vertical-panel%
     (init-field parent)
+    (init-field font)
     (super-new [parent parent])
 
     ;; public functions
@@ -41,6 +42,7 @@
     (define (placeholder)
       (new message%
            [parent container]
+           [font font]
            [label "Nothing to show"]))
 
     (define choices `("New Tab"))
@@ -49,6 +51,7 @@
     (define tab-bar (new tab-bar%
                           [parent this]
                           [choices choices]
+                          [font font]
                           [on-new-tab on-new-tab]
                           [on-change-tab on-change-tab]
                           [on-close-tab on-close-tab]))
@@ -67,6 +70,7 @@
 
     (init-field parent
                 choices
+                font
                 [active-item 0]
                 [on-change-tab (λ(idx) (displayln (format "clicked ~a" idx)))]
                 [on-new-tab (λ(idx) (displayln "default new tab"))]
@@ -106,6 +110,7 @@
         (new tab-item%
              [parent item-container]
              [is-active? #f]
+             [font font]
              [on-click (λ() (on-click-item item))]
              [on-close (λ() (on-close-item item))]
              [label label]))
@@ -158,6 +163,7 @@
     (new button%
          [parent this]
          [label "New Tab"]
+         [font font]
          [callback on-new-tab-clicked])
 
     (initialize)))
@@ -170,6 +176,7 @@
 
     (init-field parent
                 label
+                font
                 [is-active? #f]
                 [on-click (λ() (displayln "on-click"))]
                 [on-close (λ() (displayln "on-close"))])
@@ -203,6 +210,7 @@
       (new message%
          [parent label-panel]
          [label label]
+         [font font]
          [vert-margin 7]
          [horiz-margin 5]
          [auto-resize #t]))

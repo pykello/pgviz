@@ -93,6 +93,9 @@
         (λ(lst)
           (list (list-ref panels selection)))))
 
+;; style
+(define default-font (make-object font% 13 'default))
+
 ;;
 ;; gui definition
 ;;
@@ -113,14 +116,16 @@
 (define postgres-hostname
   (new text-field%
        [parent postgres-pane]
+       [font default-font]
        [label "hostname: "]
        [init-value "localhost"]
        [stretchable-width #f]
-       [min-width 200]))
+       [min-width 250]))
 
 (define postgres-port
   (new text-field%
        [parent postgres-pane]
+       [font default-font]
        [label "port: "]
        [init-value "5432"]
        [stretchable-width #f]
@@ -129,22 +134,25 @@
 (define postgres-user
   (new text-field%
        [parent postgres-pane]
+       [font default-font]
        [label "user: "]
        [init-value "hadi"]
        [stretchable-width #f]
-       [min-width 150]))
+       [min-width 200]))
 
 (define postgres-database
   (new text-field%
        [parent postgres-pane]
+       [font default-font]
        [label "database: "]
        [init-value "postgres"]
        [stretchable-width #f]
-       [min-width 200]))
+       [min-width 250]))
 
 (define connect-button
   (new button%
        [parent postgres-pane]
+       [font default-font]
        [label "Connect"]
        [stretchable-width #f]
        [min-width 100]
@@ -153,6 +161,7 @@
 (define postgres-status
   (new message%
        [label "Not Connected!"]
+       [font default-font]
        [parent postgres-pane]
        [stretchable-width #f]))
 
@@ -166,6 +175,7 @@
 (define view-type-choice
   (new choice%
        [parent views-pane]
+       [font default-font]
        [label "Type: "]
        [choices (list "Heap Page" "B-Tree Index")]
        [stretchable-width #f]
@@ -185,6 +195,7 @@
 (define relation-name
   (new text-field%
        [parent heap-view-panel]
+       [font default-font]
        [label "Relation: "]
        [init-value "pg_class"]
        [stretchable-width #f]
@@ -193,6 +204,7 @@
 (define page-index
   (new text-field%
        [parent heap-view-panel]
+       [font default-font]
        [label "Page Index: "]
        [init-value "0"]
        [stretchable-width #f]
@@ -207,6 +219,7 @@
 (define btree-name
   (new text-field%
        [parent btree-view-panel]
+       [font default-font]
        [label "Index: "]
        [init-value "pg_class_oid_index"]
        [stretchable-width #f]
@@ -215,6 +228,7 @@
 (define load-view-button
   (new button%
        [parent views-pane]
+       [font default-font]
        [label "Load View"]
        [stretchable-width #f]
        [min-width 100]
@@ -229,11 +243,13 @@
 
 (define multidoc
   (new multi-document-panel%
-       [parent monitor-pane]))
+       [parent monitor-pane]
+       [font default-font]))
 
 (define list-box-container
   (new group-box-panel%
        [parent monitor-pane]
+       [font default-font]
        [label "Attributes"]
        [horiz-margin 5]
        [stretchable-width #f]
@@ -243,17 +259,20 @@
 (define list-box
   (new list-box%
        [parent list-box-container]
+       [font default-font]
        [choices empty]
        [label #f]
        [columns `("Name" "Value")]
        [min-height 300]
        [style `(single column-headers clickable-headers)]))
 
-(send list-box set-column-width 0 100 50 200)
+(send list-box set-column-width 0 120 100 200)
+(send list-box set-column-width 1 200 100 400)
 
 (define debug-box
   (new text-field%
        [parent list-box-container]
+       [font default-font]
        [label "Debug"]
        [min-height 100]
        [style `(multiple vertical-label)]))
