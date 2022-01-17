@@ -25,7 +25,8 @@
     (init-field [cells `()]
                 [memory-size 8192]
                 [per-row 32]
-                [legend legend])
+                [legend legend]
+                [font-size 12])
 
     ;;
     ;; constants
@@ -84,7 +85,7 @@
 
     (define (draw-layout dc layout)
       (send dc set-brush "black" 'transparent)
-      (send dc set-font (make-object font% 12 'modern))
+      (send dc set-font (make-object font% font-size 'modern))
       (define label-width (log memory-size 16))
       ;; draw rows
       (for ([visible-row (memory-layout-visible-rows layout)])

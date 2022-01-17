@@ -94,7 +94,7 @@
           (list (list-ref panels selection)))))
 
 ;; style
-(define default-font (make-object font% 13 'default))
+(define default-font (make-object font% 12 'default))
 
 ;;
 ;; gui definition
