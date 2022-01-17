@@ -2,6 +2,7 @@
 
 (require db
          racket/class
+         framework
          "gui-components/monitor.rkt"
          "utils.rkt"
          "postgres-gui/heap-viewer.rkt"
@@ -220,10 +221,11 @@
        [callback on-load-clicked]))
 
 (define monitor-pane
-  (new horizontal-pane%
+  (new panel:horizontal-dragable%
        [parent window]
        [horiz-margin 5]
-       [spacing 5]))
+       [spacing 5]
+       [style '(border)]))
 
 (define multidoc
   (new multi-document-panel%
@@ -255,5 +257,7 @@
        [label "Debug"]
        [min-height 100]
        [style `(multiple vertical-label)]))
+
+(send monitor-pane set-percentages (list 4/5 1/5))
 
 (main)

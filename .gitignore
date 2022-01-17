@@ -3,4 +3,6 @@ compiled/*
 *.dep
 *.zo
 *.rkt~
+*.bak
+
 
